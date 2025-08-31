@@ -57,6 +57,12 @@ model_info = pd.DataFrame([{
     "model": model_name,
 }])
 
+mitigation = pd.DataFrame([{
+    "pre": "none",
+    "in": "none",
+    "post": "none",
+}])
+
 
 # ===== PERFORMANCE 
 
@@ -134,7 +140,7 @@ fairness_metrics = pd.DataFrame([{
 
 
 runs_file = "runs.csv"
-results = pd.concat([model_info, performance_metrics, fairness_metrics], axis=1)
+results = pd.concat([model_info, mitigation, performance_metrics, fairness_metrics], axis=1)
 
 if not os.path.exists(runs_file):
     results.to_csv(runs_file, index=False)
