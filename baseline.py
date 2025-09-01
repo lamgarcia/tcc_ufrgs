@@ -1,7 +1,9 @@
 import os
+import uuid
+from datetime import datetime
+
 import numpy as np
 import pandas as pd
-
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder, StandardScaler
@@ -11,141 +13,142 @@ from sklearn.metrics import (
     balanced_accuracy_score, log_loss, confusion_matrix
 )
 from sklearn.datasets import fetch_openml
-from datetime import datetime
-import uuid
 
 from aif360.datasets import BinaryLabelDataset
 from aif360.metrics import ClassificationMetric
 
-# ========= 1. Carregar e preparar dados =========
-adult = fetch_openml(name='adult', version=2, as_frame=True)
-df = adult.frame.rename(columns={'class': 'income'})
-df.dropna(inplace=True)
-df = df[df['sex'].isin(['Male', 'Female'])]
 
-# Codificar target e atributo sensível
-df['income_bin'] = df['income'].apply(lambda x: 1 if x == '>50K' else 0)
-df['sex_bin'] = LabelEncoder().fit_transform(df['sex'])  # 0=Female, 1=Male
+def load_and_preprocess():
+    """Carrega e prepara o dataset Adult do OpenML."""
+    adult = fetch_openml(name='adult', version=2, as_frame=True)
+    df = adult.frame.rename(columns={'class': 'income'})
 
-X = df.drop(['income', 'income_bin', 'sex', 'sex_bin'], axis=1)
-y = df['income_bin']
-A = df['sex_bin']
+    # limpeza
+    df.dropna(inplace=True)
+    df = df[df['sex'].isin(['Male', 'Female'])]
 
-# One-hot e standard scaler
-X_encoded = pd.get_dummies(X, drop_first=True)
-X_scaled = StandardScaler().fit_transform(X_encoded)
+    # binarização
+    df['income_bin'] = df['income'].apply(lambda x: 1 if x == '>50K' else 0)
+    df['sex_bin'] = LabelEncoder().fit_transform(df['sex'])  # 0=Female, 1=Male
 
-# ========= 2. Divisão dos dados =========
-X_temp, X_test, y_temp, y_test, A_temp, A_test = train_test_split(
-    X_scaled, y, A, test_size=0.2, random_state=42)
-X_train, X_val, y_train, y_val, A_train, A_val = train_test_split(
-    X_temp, y_temp, A_temp, test_size=0.25, random_state=42)
+    # features, target e atributo sensível
+    X = df.drop(['income', 'income_bin', 'sex', 'sex_bin'], axis=1)
+    y = df['income_bin']
+    A = df['sex_bin']
 
-# ========= 3. Treinar modelo =========
-model = LogisticRegression(max_iter=1000, random_state=42)
-model.fit(X_train, y_train)
-model_name = "LogisticRegression"
+    # one-hot e escala
+    X_encoded = pd.get_dummies(X, drop_first=True)
+    X_scaled = StandardScaler().fit_transform(X_encoded)
 
-# ========= 4. Avaliação =========
-y_pred = model.predict(X_val)
-y_proba = model.predict_proba(X_val)[:, 1]
+    return X_scaled, y, A
 
 
-model_info = pd.DataFrame([{
-    "id": str(uuid.uuid4()),
-    "data": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-    "model": model_name,
-}])
-
-mitigation = pd.DataFrame([{
-    "pre": "none",
-    "in": "none",
-    "post": "none",
-}])
+def split_data(X, y, A, test_size=0.2, val_size=0.25, random_state=42):
+    """Divide os dados em treino, validação e teste."""
+    X_temp, X_test, y_temp, y_test, A_temp, A_test = train_test_split(
+        X, y, A, test_size=test_size, random_state=random_state
+    )
+    X_train, X_val, y_train, y_val, A_train, A_val = train_test_split(
+        X_temp, y_temp, A_temp, test_size=val_size, random_state=random_state
+    )
+    return X_train, X_val, X_test, y_train, y_val, y_test, A_train, A_val, A_test
 
 
-# ===== PERFORMANCE 
+def train_model(X_train, y_train):
 
-tn, fp, fn, tp = confusion_matrix(y_val, y_pred).ravel()
-
-f1 = f1_score(y_val, y_pred)
-precision = precision_score(y_val, y_pred)
-accuracy = accuracy_score(y_val, y_pred)
-recall = recall_score(y_val, y_pred)
-specificity = tn / (tn + fp)
-balanced_acc = balanced_accuracy_score(y_val, y_pred)
-roc_auc = roc_auc_score(y_val, y_proba)
-pr_auc = average_precision_score(y_val, y_proba)
-mcc = matthews_corrcoef(y_val, y_pred)
-logloss = log_loss(y_val, y_proba)
-npv = tn / (tn + fn) if (tn + fn) > 0 else 0.0
-
-performance_metrics = pd.DataFrame([{
-    "acuracia": accuracy,
-    "precisao": precision,
-    "npv": npv,
-    "recall": recall,
-    "specificity": specificity,
-    "f1-score": f1,
-    "balanced_accuracy": balanced_acc,
-    "roc_auc": roc_auc,
-    "pr_auc": pr_auc,
-    "mcc": mcc,
-    "log_loss": logloss,
-    "true_positives": tp,
-    "true_negatives": tn,
-    "false_positives": fp,
-    "false_negatives": fn
-}])
-
-#### FAIRNESS
-
-tn0, fp0, fn0, tp0 = confusion_matrix(y_val[A_val==0], y_pred[A_val==0]).ravel()
-tn1, fp1, fn1, tp1 = confusion_matrix(y_val[A_val==1], y_pred[A_val==1]).ravel()
-
-dataset_true = BinaryLabelDataset(
-    df=pd.DataFrame({"income": y_val, "sex": A_val}),
-    label_names=['income'],
-    protected_attribute_names=['sex'],
-    favorable_label=1,
-    unfavorable_label=0
-)
-
-dataset_pred = dataset_true.copy()
-dataset_pred.labels = y_pred.reshape(-1, 1)
-
-metric = ClassificationMetric(
-    dataset_true,
-    dataset_pred,
-    privileged_groups=[{'sex': 1}],
-    unprivileged_groups=[{'sex': 0}]
-)
-
-dpd = metric.statistical_parity_difference()
-eod = metric.equalized_odds_difference()
-aod = metric.average_odds_difference()
-# ========= 5b. Predictive Parity =========
-ppv0 = tp0 / (tp0 + fp0) if (tp0 + fp0) > 0 else 0.0  # grupo não privilegiado
-ppv1 = tp1 / (tp1 + fp1) if (tp1 + fp1) > 0 else 0.0  # grupo privilegiado
-predictive_parity_diff = ppv1 - ppv0
-
-fairness_metrics = pd.DataFrame([{
-    "statistical_parity_diff": dpd,
-    "equalized_odds_diff": eod,
-    "average_odds_diff": aod,
-    "predictive_parity_diff": predictive_parity_diff
-}])
+    model = LogisticRegression(max_iter=2000, random_state=42)
+    model.fit(X_train, y_train)
+    model_name = "LogisticRegression"
+    return model, model_name
 
 
+def evaluate_performance(y_true, y_pred, y_proba):
+    """Calcula métricas de performance."""
+    tn, fp, fn, tp = confusion_matrix(y_true, y_pred, labels=[0, 1]).ravel()
+
+    return pd.DataFrame([{
+        "acuracia": accuracy_score(y_true, y_pred),
+        "precisao": precision_score(y_true, y_pred),
+        "npv": tn / (tn + fn) if (tn + fn) > 0 else 0.0,
+        "recall": recall_score(y_true, y_pred),
+        "specificity": tn / (tn + fp) if (tn + fp) > 0 else 0.0,
+        "f1-score": f1_score(y_true, y_pred),
+        "balanced_accuracy": balanced_accuracy_score(y_true, y_pred),
+        "roc_auc": roc_auc_score(y_true, y_proba),
+        "pr_auc": average_precision_score(y_true, y_proba),
+        "mcc": matthews_corrcoef(y_true, y_pred),
+        "log_loss": log_loss(y_true, y_proba),
+        "true_positives": tp,
+        "true_negatives": tn,
+        "false_positives": fp,
+        "false_negatives": fn
+    }])
 
 
-runs_file = "runs.csv"
-results = pd.concat([model_info, mitigation, performance_metrics, fairness_metrics], axis=1)
+def evaluate_fairness(y_true, y_pred, A, protected_attribute, label):
+   
+    dataset_true = BinaryLabelDataset(
+        df=pd.DataFrame({label: y_true.values, protected_attribute: A.values}),
+        label_names=[label],
+        protected_attribute_names=[protected_attribute],
+        favorable_label=1,
+        unfavorable_label=0
+    )
+    dataset_pred = dataset_true.copy()
+    dataset_pred.labels = y_pred.reshape(-1, 1)
 
-if not os.path.exists(runs_file):
-    results.to_csv(runs_file, index=False)
-else:
-    results.to_csv(runs_file, index=False, mode="a", header=False)
+    metric = ClassificationMetric(
+        dataset_true,
+        dataset_pred,
+        privileged_groups=[{protected_attribute: 1}],
+        unprivileged_groups=[{protected_attribute: 0}]
+    )
+ 
+    return pd.DataFrame([{
+        "statistical_parity_diff": metric.statistical_parity_difference(),
+        "equalized_odds_diff": metric.equalized_odds_difference(),
+        "average_odds_diff": metric.average_odds_difference(),
+        "disparate_impact": metric.disparate_impact(),
+  
+        "positive_predictive_value": metric.positive_predictive_value()
+    }])
 
-print("Métricas salvas em 'runs.csv'")
-print(results)
+
+def main():
+    X, y, A = load_and_preprocess()
+    X_train, X_val, X_test, y_train, y_val, y_test, A_train, A_val, A_test = split_data(X, y, A)
+
+    model, model_name = train_model(X_train, y_train)
+    y_pred = model.predict(X_val)
+    y_proba = model.predict_proba(X_val)[:, 1]
+
+    model_info = pd.DataFrame([{
+        "id": str(uuid.uuid4()),
+        "data": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "model": model_name,
+    }])
+
+    mitigation = pd.DataFrame([{"pre": "none", "in": "none", "post": "none"}])
+    
+    performance_metrics = evaluate_performance(y_val, y_pred, y_proba)
+    
+    fairness_metrics = evaluate_fairness(y_val, y_pred, A_val, protected_attribute = 'sex', label = 'income')
+
+    results = pd.concat(
+        [model_info, mitigation, performance_metrics, fairness_metrics],
+        axis=1
+    )
+
+    results_file="runs.csv"
+    
+    if os.path.exists(results_file):
+        results.to_csv(results_file, mode="a", header=False, index=False)
+    else:
+        results.to_csv(results_file, index=False)
+
+    print("Save:", results_file)
+    print(results)
+
+
+if __name__ == "__main__":
+    main()
