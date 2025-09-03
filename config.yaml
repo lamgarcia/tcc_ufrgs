@@ -10,18 +10,17 @@ dataset:
 
 split:
   test_size: 0.2
-  val_size: 0.25
-  random_state: 
+  random_state: 50
 
 model:
   name: "logistic_regression"
   params:
     max_iter: 2000
-    random_state: 0
+    random_state: 50
 
 mitigation:
   pre:
-    name: "reweighing"
+    name: "none" #"reweighing"
     params: {}
   in:
     name: "none"

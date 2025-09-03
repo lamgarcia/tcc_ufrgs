@@ -4,15 +4,21 @@ def apply(X_train, y_train, A_train, params):
     from aif360.datasets import BinaryLabelDataset
     from aif360.algorithms.preprocessing import Reweighing
 
-    # Converte tudo para float
-    df = pd.DataFrame(X_train.astype(float))
-    df['label'] = y_train.astype(float)
-    df['protected'] = A_train.astype(float)
+    # Converte para DataFrame/Series com índice alinhado
+    X_train_df = pd.DataFrame(X_train.astype(float))
+    y_train_sr = pd.Series(y_train.astype(float), name='label')
+    A_train_sr = pd.Series(A_train.astype(float), name='protected')
 
-    # Remove NaNs ou infinitos
+    # Combina tudo
+    df = pd.concat([X_train_df, y_train_sr, A_train_sr], axis=1)
     df = df.replace([np.inf, -np.inf], np.nan).dropna()
 
-    # BinaryLabelDataset
+    # Extraímos os dados limpos
+    X_clean = df.drop(['label', 'protected'], axis=1).values
+    y_clean = df['label'].values
+    A_clean = df['protected'].values
+
+    # Cria BinaryLabelDataset
     dataset = BinaryLabelDataset(
         df=df,
         label_names=['label'],
@@ -21,7 +27,7 @@ def apply(X_train, y_train, A_train, params):
         unfavorable_label=0
     )
 
-    # Reweighing
+    # Aplica Reweighting
     rw = Reweighing(
         unprivileged_groups=[{'protected': 0}],
         privileged_groups=[{'protected': 1}]
@@ -29,8 +35,11 @@ def apply(X_train, y_train, A_train, params):
     rw.fit(dataset)
     dataset_transf = rw.transform(dataset)
 
-    X_train_new = df.drop(['label', 'protected'], axis=1).values
-    y_train_new = df['label'].values
+    # Obtém os pesos
     sample_weight = dataset_transf.instance_weights
 
-    return X_train_new, y_train_new, sample_weight
+    # Validação
+    assert len(X_clean) == len(y_clean) == len(sample_weight), \
+        "Erro: tamanhos não batem após Reweighting"
+
+    return X_clean, y_clean, sample_weight

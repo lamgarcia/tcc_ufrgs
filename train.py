@@ -38,7 +38,7 @@ def load_and_preprocess(dataset_cfg):
         raise ValueError(f"Coluna alvo '{dataset_cfg['target']}' não encontrada no dataset.")
 
     # remove linhas com valores ausentes
-    df.dropna(inplace=True)
+    df.dropna(inplace=True)  # ou use imputação
     df = df.replace([np.inf, -np.inf], np.nan).dropna()
     
     # Filtra apenas categorias privilegiadas e não privilegiadas
@@ -47,10 +47,9 @@ def load_and_preprocess(dataset_cfg):
     unprivileged = dataset_cfg["unprivileged"]
     df = df[df[sensitive_col].isin(privileged + unprivileged)]
     target_col = dataset_cfg["target"]
-    favorable = dataset_cfg["favorable"]  # valor padrão
-    unfavorable  = dataset_cfg["unfavorable"]  # valor padrão
-
-    
+    favorable = dataset_cfg["favorable"]  
+    unfavorable  = dataset_cfg["unfavorable"] 
+        
     # Cria coluna binária para atributo sensível
     df[f"{sensitive_col}_bin"] = df[sensitive_col].apply(
         lambda x: 1 if x in privileged else 0
@@ -75,17 +74,13 @@ def load_and_preprocess(dataset_cfg):
 
 
 def split_data(X, y, A, split_cfg):
-    X_temp, X_test, y_temp, y_test, A_temp, A_test = train_test_split(
+    X_train, X_test, y_train, y_test, A_train, A_test = train_test_split(
         X, y, A,
         test_size=split_cfg["test_size"],
         random_state=split_cfg["random_state"]
     )
-    X_train, X_val, y_train, y_val, A_train, A_val = train_test_split(
-        X_temp, y_temp, A_temp,
-        test_size=split_cfg["val_size"],
-        random_state=split_cfg["random_state"]
-    )
-    return X_train, X_val, X_test, y_train, y_val, y_test, A_train, A_val, A_test
+
+    return X_train, X_test, y_train, y_test, A_train, A_test
 
 # ===================== Model Training =====================
 def train_model(model_cfg, X_train, y_train, sample_weight=None):
@@ -116,12 +111,12 @@ def apply_mitigation_in(model, X_train, y_train, A_train, mitigation_cfg):
     mitigation_module = importlib.import_module(module_path)
     return mitigation_module.apply(model, X_train, y_train, A_train, mitigation_cfg.get("params", {}))
 
-def apply_mitigation_post(y_pred, y_proba, y_val, A_val, mitigation_cfg):
+def apply_mitigation_post(y_pred, y_proba, y_test, A_test, mitigation_cfg):
     if mitigation_cfg["name"].lower() == "none":
         return y_pred, y_proba
     module_path = f"src.mitigation.post.{mitigation_cfg['name'].lower()}"
     mitigation_module = importlib.import_module(module_path)
-    return mitigation_module.apply(y_pred, y_proba, y_val, A_val, mitigation_cfg.get("params", {}))
+    return mitigation_module.apply(y_pred, y_proba, y_test, A_test, mitigation_cfg.get("params", {}))
 
 # ===================== Metrics =====================
 def evaluate_performance(y_true, y_pred, y_proba):
@@ -190,7 +185,6 @@ def evaluate_fairness(y_true, y_pred, A, protected_attribute, label):
         privileged_groups=[{protected_attribute: 1}],
         unprivileged_groups=[{protected_attribute: 0}]
     )
-
     return pd.DataFrame([{
         "statistical_parity_diff": metric.statistical_parity_difference(),
         "equalized_odds_diff": metric.equalized_odds_difference(),
@@ -205,7 +199,7 @@ def run_experiment(config_path):
 
     # === Data ===
     X, y, A = load_and_preprocess(config["dataset"])
-    X_train, X_val, X_test, y_train, y_val, y_test, A_train, A_val, A_test = split_data(X, y, A, config["split"])
+    X_train, X_test, y_train, y_test, A_train, A_test = split_data(X, y, A, config["split"])
 
     # === Pre-processing mitigation ===
     X_train, y_train, sample_weight = apply_mitigation_pre(X_train, y_train, A_train, config["mitigation"]["pre"])
@@ -216,28 +210,30 @@ def run_experiment(config_path):
     # === In-processing mitigation ===
     model = apply_mitigation_in(model, X_train, y_train, A_train, config["mitigation"]["in"])
 
-    # === Predict ===
-    if hasattr(model, "predict_proba"):
-        y_pred = model.predict(X_val)
-        y_proba = model.predict_proba(X_val)[:, 1]
+    # === Test ===
+    if config["mitigation"]["in"]["name"] == 'none': # hasattr(model, "predict_proba"):
+        y_pred = model.predict(X_test)
+        y_proba = model.predict_proba(X_test)[:, 1]
+        print('nao usei in mitigation')
     else:
+        print(' usei in mitigation')
         # Se o modelo for AIF360 in-processing
-        from aif360.datasets import BinaryLabelDataset
-        df_val = pd.DataFrame(X_val)
-        df_val['label'] = y_val.values
-        df_val['protected'] = A_val.values
-        dataset_val = BinaryLabelDataset(
-            df=df_val,
+        df_test = pd.DataFrame(X_test)
+        df_test['label'] = y_test.values
+        df_test['protected'] = y_test.values
+        dataset_test = BinaryLabelDataset(
+            df=df_test,
             label_names=['label'],
             protected_attribute_names=['protected'],
             favorable_label=1,
             unfavorable_label=0
         )
-        y_pred = model.predict(dataset_val).labels.ravel()
-        y_proba = y_pred  # AIF360 não retorna probabilidade, apenas labels
-
+        y_pred = model.predict(dataset_test).labels.ravel()
+        y_proba = y_pred  # AIF360 não retorna probabilidade, apenas labels (ruim para log-loss, auc, roc..)
+                          # Evitar AIF360 se você precisa de probabilidades calibradas — use modelos fairness-aware que integram com sklearn (como fairlearn).
+                          #   
     # === Post-processing mitigation ===
-    y_pred, y_proba = apply_mitigation_post(y_pred, y_proba, y_val, A_val, config["mitigation"]["post"])
+    y_pred, y_proba = apply_mitigation_post(y_pred, y_proba, y_test, A_test, config["mitigation"]["post"])
 
     # === Info e Metrics ===
     model_info = pd.DataFrame([{
@@ -252,10 +248,10 @@ def run_experiment(config_path):
         "post": config["mitigation"]["post"]["name"]
     }])
 
-    performance_metrics = evaluate_performance(y_val, y_pred, y_proba)
+    performance_metrics = evaluate_performance(y_test, y_pred, y_proba)
 
     fairness_metrics = evaluate_fairness(
-        y_val, y_pred, A_val,
+        y_test, y_pred, A_test,
         protected_attribute=config["dataset"]["sensitive"],
         label=config["dataset"]["target"]
     )
