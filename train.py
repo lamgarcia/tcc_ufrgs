@@ -98,8 +98,7 @@ def train_model(model_cfg, X_train, y_train, sample_weight=None):
 # ===================== Mitigation =====================
 def apply_mitigation_pre(X_train, y_train, A_train, mitigation_cfg):
     if mitigation_cfg["name"].lower() == "none":
-        return X_train, y_train, None  # sempre 3 valores
-
+        return X_train, y_train, A_train, None  # sempre 3 valores
     module_path = f"src.mitigation.pre.{mitigation_cfg['name'].lower()}"
     mitigation_module = importlib.import_module(module_path)
     return mitigation_module.apply(X_train, y_train, A_train, mitigation_cfg.get("params", {}))
@@ -107,9 +106,14 @@ def apply_mitigation_pre(X_train, y_train, A_train, mitigation_cfg):
 def apply_mitigation_in(model, X_train, y_train, A_train, mitigation_cfg):
     if mitigation_cfg["name"].lower() == "none":
         return model
-    module_path = f"src.mitigation.in_processing.{mitigation_cfg['name'].lower()}"
-    mitigation_module = importlib.import_module(module_path)
-    return mitigation_module.apply(model, X_train, y_train, A_train, mitigation_cfg.get("params", {}))
+    try:
+        module_path = f"src.mitigation.in_processing.{mitigation_cfg['name'].lower()}"
+        mitigation_module = importlib.import_module(module_path)
+        return mitigation_module.apply(model, X_train, y_train, A_train, mitigation_cfg.get("params", {}))
+    except ModuleNotFoundError:
+            raise ValueError(f"Module not found for preprocessing: {module_path}")
+    except AttributeError:
+            raise ValueError(f"The module {module_path} must have a function 'apply(X, y, A, params)'")
 
 def apply_mitigation_post(y_pred, y_proba, y_test, A_test, mitigation_cfg):
     if mitigation_cfg["name"].lower() == "none":
@@ -202,7 +206,7 @@ def run_experiment(config_path):
     X_train, X_test, y_train, y_test, A_train, A_test = split_data(X, y, A, config["split"])
 
     # === Pre-processing mitigation ===
-    X_train, y_train, sample_weight = apply_mitigation_pre(X_train, y_train, A_train, config["mitigation"]["pre"])
+    X_train, y_train, A_train, sample_weight = apply_mitigation_pre(X_train, y_train, A_train, config["mitigation"]["pre"])
 
     # === Model ===
     model, model_name = train_model(config["model"], X_train, y_train, sample_weight=sample_weight)
