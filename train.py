@@ -1,11 +1,12 @@
 import os
 import uuid
 import yaml
-from datetime import datetime
 import importlib
 import numpy as np
-
 import pandas as pd
+from datetime import datetime
+
+
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 from sklearn.metrics import (
@@ -82,27 +83,71 @@ def split_data(X, y, A, split_cfg):
 
     return X_train, X_test, y_train, y_test, A_train, A_test
 
+def _get_valid_fit_params(fit_method, params):
+    """
+    Filtra apenas os parâmetros válidos para o método fit() do modelo.
+    """
+    import inspect
+    sig = inspect.signature(fit_method)
+    valid_params = set(sig.parameters.keys())
+    
+    # Ignorar parâmetros especiais como *args, **kwargs
+    valid_params.discard("args")
+    valid_params.discard("kwargs")
+    
+    # Retorna apenas os parâmetros que o fit() aceita
+    return {k: v for k, v in params.items() if k in valid_params}
+
 # ===================== Model Training =====================
-def train_model(model_cfg, X_train, y_train, sample_weight=None):
+#def train_model(model_cfg, X_train, y_train, sample_weight=None):
+#    module_path = f"src.models.{model_cfg['name'].lower()}"
+#    model_module = importlib.import_module(module_path)
+#    model = model_module.create_model(model_cfg.get("params", {}))
+#    
+#    if sample_weight is not None:
+#        model.fit(X_train, y_train, sample_weight=sample_weight)
+#    else:
+#        model.fit(X_train, y_train)  
+#    return model, model_cfg["name"]
+
+def train_model(model_cfg, X_train, y_train, params=None):
+    """
+    Treina o modelo com parâmetros adicionais dinâmicos no .fit()
+    """
+    if params is None:
+        params = {}
+
     module_path = f"src.models.{model_cfg['name'].lower()}"
-    model_module = importlib.import_module(module_path)
-    model = model_module.create_model(model_cfg.get("params", {}))
+    try:
+        model_module = importlib.import_module(module_path)
+        model = model_module.create_model(model_cfg.get("params", {}))
+    except ModuleNotFoundError:
+        raise ValueError(f"Model '{model_cfg['name']}' not found in src.models")
+        
+    # Chama fit com todos os params possíveis (filtrando apenas os válidos)
+    fit_params = _get_valid_fit_params(model.fit, params)
     
-    if sample_weight is not None:
-        model.fit(X_train, y_train, sample_weight=sample_weight)
-    else:
-        model.fit(X_train, y_train)
-    
+    model.fit(X_train, y_train, **fit_params)
     return model, model_cfg["name"]
 
 # ===================== Mitigation =====================
 def apply_mitigation_pre(X_train, y_train, A_train, mitigation_cfg):
     if mitigation_cfg["name"].lower() == "none":
-        return X_train, y_train, A_train, None  # sempre 3 valores
+        return X_train, y_train, A_train, {}  # sempre 3 valores
     module_path = f"src.mitigation.pre.{mitigation_cfg['name'].lower()}"
-    mitigation_module = importlib.import_module(module_path)
-    return mitigation_module.apply(X_train, y_train, A_train, mitigation_cfg.get("params", {}))
-
+    try:
+        mitigation_module = importlib.import_module(module_path)
+        # A função apply agora deve retornar um dict de params
+        X_train, y_train, A_train, params = mitigation_module.apply(
+            X_train, y_train, A_train, mitigation_cfg.get("params", {})
+        )
+        # Garantir que params seja um dicionário
+        if params is None:
+            params = {}
+        return X_train, y_train, A_train, params
+    except ModuleNotFoundError:
+        raise ValueError(f"Mitigation method '{mitigation_cfg['name']}' not found in src.mitigation.pre")
+    
 def apply_mitigation_in(model, X_train, y_train, A_train, mitigation_cfg):
     if mitigation_cfg["name"].lower() == "none":
         return model
@@ -204,12 +249,16 @@ def run_experiment(config_path):
     # === Data ===
     X, y, A = load_and_preprocess(config["dataset"])
     X_train, X_test, y_train, y_test, A_train, A_test = split_data(X, y, A, config["split"])
-
+    
     # === Pre-processing mitigation ===
-    X_train, y_train, A_train, sample_weight = apply_mitigation_pre(X_train, y_train, A_train, config["mitigation"]["pre"])
+    X_train, y_train, A_train, extra_params = apply_mitigation_pre(X_train, y_train, A_train, config["mitigation"]["pre"])
 
-    # === Model ===
-    model, model_name = train_model(config["model"], X_train, y_train, sample_weight=sample_weight)
+    print (extra_params)
+    #(pd.crosstab(y_train, A_train)).to_csv('crosstab_apos_pre_processing.csv')
+   
+
+    # === Model training  ===
+    model, model_name = train_model(config["model"], X_train, y_train, params=extra_params)
 
     # === In-processing mitigation ===
     model = apply_mitigation_in(model, X_train, y_train, A_train, config["mitigation"]["in"])
@@ -239,7 +288,7 @@ def run_experiment(config_path):
     # === Post-processing mitigation ===
     y_pred, y_proba = apply_mitigation_post(y_pred, y_proba, y_test, A_test, config["mitigation"]["post"])
 
-    # === Info e Metrics ===
+    # === Info Model e Mitigation  ===
     model_info = pd.DataFrame([{
         "id": str(uuid.uuid4()),
         "data": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -252,8 +301,10 @@ def run_experiment(config_path):
         "post": config["mitigation"]["post"]["name"]
     }])
 
+    # === Performance Metrics ===
     performance_metrics = evaluate_performance(y_test, y_pred, y_proba)
 
+    # === Fairness Metrics ===
     fairness_metrics = evaluate_fairness(
         y_test, y_pred, A_test,
         protected_attribute=config["dataset"]["sensitive"],

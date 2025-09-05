@@ -1,6 +1,10 @@
 def apply(X_train, y_train, A_train, params):
 
+    from aif360.datasets import BinaryLabelDataset
     from aif360.algorithms.preprocessing import Reweighing
+    import pandas as pd
+    import numpy as np
+
 
     # Converte para DataFrame/Series com índice alinhado
     X_train_df = pd.DataFrame(X_train.astype(float))
@@ -40,4 +44,4 @@ def apply(X_train, y_train, A_train, params):
     assert len(X_clean) == len(y_clean) == len(sample_weight), \
         "Erro: tamanhos não batem após Reweighting"
 
-    return X_clean, y_clean, A_clean, sample_weight
+    return X_clean, y_clean, A_clean, {"sample_weight": sample_weight}
