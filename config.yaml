@@ -14,7 +14,8 @@ split:
 
 model:
   name: random_florest
-  params: {}
+  params: 
+     random_state: 50
 
 
   #name: "logistic_regression" 
@@ -31,10 +32,10 @@ model:
   #  batch_size: 32
   #  learning_rate_init: 0.001
   #  max_iter: 300
-  #  random_state: 50
   #  early_stopping: true
   #  validation_fraction: 0.1
   #  n_iter_no_change: 10
+  #  random_state: 50
 
 mitigation:
   pre:

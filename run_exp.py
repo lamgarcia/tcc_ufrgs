@@ -27,20 +27,16 @@ def load_config(config_path="config.yaml"):
 # ===================== Data Preprocessing =====================
 
 def load_and_preprocess(dataset_cfg):
-    #adult = fetch_openml(name=dataset_cfg["name"], version=dataset_cfg["version"], as_frame=True)
-    #df = adult.frame.rename(columns={"class": dataset_cfg["target"]})
-    #df.dropna(inplace=True)
 
-    # lê o CSV local
     df = pd.read_csv(dataset_cfg["path"])
 
     # garante que o nome da coluna alvo está certo
     if dataset_cfg["target"] not in df.columns:
-        raise ValueError(f"Coluna alvo '{dataset_cfg['target']}' não encontrada no dataset.")
+        raise ValueError(f"Target column '{dataset_cfg['target']}' not found in dataset.")
 
     # remove linhas com valores ausentes
-    df.dropna(inplace=True)  # ou use imputação
-    df = df.replace([np.inf, -np.inf], np.nan).dropna()
+    df.replace([np.inf, -np.inf], np.nan, inplace=True)
+    df.dropna(inplace=True)
     
     # Filtra apenas categorias privilegiadas e não privilegiadas
     sensitive_col = dataset_cfg["sensitive"]
@@ -99,36 +95,28 @@ def _get_valid_fit_params(fit_method, params):
     return {k: v for k, v in params.items() if k in valid_params}
 
 # ===================== Model Training =====================
-#def train_model(model_cfg, X_train, y_train, sample_weight=None):
-#    module_path = f"src.models.{model_cfg['name'].lower()}"
-#    model_module = importlib.import_module(module_path)
-#    model = model_module.create_model(model_cfg.get("params", {}))
-#    
-#    if sample_weight is not None:
-#        model.fit(X_train, y_train, sample_weight=sample_weight)
-#    else:
-#        model.fit(X_train, y_train)  
-#    return model, model_cfg["name"]
 
-def train_model(model_cfg, X_train, y_train, params=None):
-    """
-    Treina o modelo com parâmetros adicionais dinâmicos no .fit()
-    """
-    if params is None:
-        params = {}
+def train_model(model_name, X_train, y_train, params_model, params_fit=None):
+    
+    if params_model is None:
+        params_model = {}
 
-    module_path = f"src.models.{model_cfg['name'].lower()}"
+    if params_fit is None:
+        params_fit = {}
+
+    module_path = f"src.models.{model_name}"
     try:
         model_module = importlib.import_module(module_path)
-        model = model_module.create_model(model_cfg.get("params", {}))
+        model = model_module.create_model(params_model)
+        #model_cfg.get("params", {})
     except ModuleNotFoundError:
-        raise ValueError(f"Model '{model_cfg['name']}' not found in src.models")
+        raise ValueError(f"Model '{model_name}' not found in src.models")
         
     # Chama fit com todos os params possíveis (filtrando apenas os válidos)
-    fit_params = _get_valid_fit_params(model.fit, params)
+    fit_params = _get_valid_fit_params(model.fit, params_fit)
     
     model.fit(X_train, y_train, **fit_params)
-    return model, model_cfg["name"]
+    return model
 
 # ===================== Mitigation =====================
 def apply_mitigation_pre(X_train, y_train, A_train, mitigation_cfg):
@@ -251,17 +239,22 @@ def run_experiment(config_path):
     X_train, X_test, y_train, y_test, A_train, A_test = split_data(X, y, A, config["split"])
     
     # === Pre-processing mitigation ===
-    X_train, y_train, A_train, extra_params = apply_mitigation_pre(X_train, y_train, A_train, config["mitigation"]["pre"])
-
-    print (extra_params)
-    #(pd.crosstab(y_train, A_train)).to_csv('crosstab_apos_pre_processing.csv')
-   
+    X_train, y_train, A_train, params_pre_mitigation = apply_mitigation_pre(X_train, y_train, A_train, config["mitigation"]["pre"])
 
     # === Model training  ===
-    model, model_name = train_model(config["model"], X_train, y_train, params=extra_params)
+    model = train_model(
+        config["model"]["name"].lower(), 
+        X_train, y_train, 
+        params_model=config["model"]["params"], 
+        params_fit=params_pre_mitigation
+    )
 
     # === In-processing mitigation ===
-    model = apply_mitigation_in(model, X_train, y_train, A_train, config["mitigation"]["in"])
+    model = apply_mitigation_in(
+        model, 
+        X_train, y_train, A_train, 
+        config["mitigation"]["in"]
+    )
 
     # === Test ===
     if config["mitigation"]["in"]["name"] == 'none': # hasattr(model, "predict_proba"):
@@ -292,7 +285,7 @@ def run_experiment(config_path):
     model_info = pd.DataFrame([{
         "id": str(uuid.uuid4()),
         "data": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "model": model_name
+        "model": config["model"]["name"].lower()
     }])
 
     mitigation_info = pd.DataFrame([{
