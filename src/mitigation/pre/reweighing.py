@@ -5,7 +5,6 @@ def apply(X_train, y_train, A_train, params):
     import pandas as pd
     import numpy as np
 
-
     # Converte para DataFrame/Series com índice alinhado
     X_train_df = pd.DataFrame(X_train.astype(float))
     y_train_sr = pd.Series(y_train.astype(float), name='label')

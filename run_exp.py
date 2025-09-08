@@ -1,4 +1,5 @@
 import os
+import sys
 import uuid
 import yaml
 import importlib
@@ -35,12 +36,12 @@ def load_and_preprocess(dataset_cfg):
     
     # Filtra apenas categorias privilegiadas e não privilegiadas
     sensitive_col = dataset_cfg["sensitive"]
-    privileged = dataset_cfg["privileged"]
-    unprivileged = dataset_cfg["unprivileged"]
+    privileged    = dataset_cfg["privileged"]
+    unprivileged  = dataset_cfg["unprivileged"]
+    target_col    = dataset_cfg["target"]
+    favorable     = dataset_cfg["favorable"]  
+    unfavorable   = dataset_cfg["unfavorable"] 
     df = df[df[sensitive_col].isin(privileged + unprivileged)]
-    target_col = dataset_cfg["target"]
-    favorable = dataset_cfg["favorable"]  
-    unfavorable  = dataset_cfg["unfavorable"] 
         
     # Cria coluna binária para atributo sensível
     df[f"{sensitive_col}_bin"] = df[sensitive_col].apply(
@@ -89,7 +90,6 @@ def _get_valid_fit_params(fit_method, params):
     # Retorna apenas os parâmetros que o fit() aceita
     return {k: v for k, v in params.items() if k in valid_params}
 
-
 # ===================== Model Training =====================
 
 def train_model(model_name, X_train, y_train, params_model, params_fit=None):
@@ -116,41 +116,54 @@ def train_model(model_name, X_train, y_train, params_model, params_fit=None):
 
 # ===================== Mitigation =====================
 def apply_mitigation_pre(X_train, y_train, A_train, mitigation_cfg):
+    
     if mitigation_cfg["name"].lower() == "none":
-        return X_train, y_train, A_train, {}  # sempre 3 valores
-    module_path = f"src.mitigation.pre.{mitigation_cfg['name'].lower()}"
+        return X_train, y_train, A_train, {}  
     try:
+        module_path = f"src.mitigation.pre.{mitigation_cfg['name'].lower()}"
         mitigation_module = importlib.import_module(module_path)
-        # A função apply agora deve retornar um dict de params
+
         X_train, y_train, A_train, params = mitigation_module.apply(
             X_train, y_train, A_train, mitigation_cfg.get("params", {})
         )
-        # Garantir que params seja um dicionário
-        if params is None:
+
+        if params is None:  # params is dict
             params = {}
+
         return X_train, y_train, A_train, params
+
     except ModuleNotFoundError:
-        raise ValueError(f"Mitigation method '{mitigation_cfg['name']}' not found in src.mitigation.pre")
-    
-def apply_mitigation_in(model, X_train, y_train, A_train, mitigation_cfg):
-    if mitigation_cfg["name"].lower() == "none":
-        return model
-    try:
-        module_path = f"src.mitigation.in_processing.{mitigation_cfg['name'].lower()}"
-        mitigation_module = importlib.import_module(module_path)
-        return mitigation_module.apply(model, X_train, y_train, A_train, mitigation_cfg.get("params", {}))
-    except ModuleNotFoundError:
-            raise ValueError(f"Module not found for preprocessing: {module_path}")
+        raise ValueError(f"Mitigation method '{mitigation_cfg['name']}' not found in '{module_path}'")
     except AttributeError:
             raise ValueError(f"The module {module_path} must have a function 'apply(X, y, A, params)'")
+    
+def apply_mitigation_in(model, X_train, y_train, A_train, mitigation_cfg):
+    
+    if mitigation_cfg["name"].lower() == "none":
+        return model   
+    try:
+        module_path = f"src.mitigation.in.{mitigation_cfg['name'].lower()}"
+        mitigation_module = importlib.import_module(module_path)
+        return mitigation_module.apply(model, X_train, y_train, A_train, mitigation_cfg.get("params", {}))
+
+    except ModuleNotFoundError:
+            raise ValueError(f"Mitigation method '{mitigation_cfg['name']}' not found in '{module_path}'")
+    except AttributeError:
+            raise ValueError(f"The module {module_path} must have a function 'apply(model, X, y, A, params)'")
 
 def apply_mitigation_post(y_pred, y_proba, y_test, A_test, mitigation_cfg):
+
     if mitigation_cfg["name"].lower() == "none":
         return y_pred, y_proba
-    module_path = f"src.mitigation.post.{mitigation_cfg['name'].lower()}"
-    mitigation_module = importlib.import_module(module_path)
-    return mitigation_module.apply(y_pred, y_proba, y_test, A_test, mitigation_cfg.get("params", {}))
-
+    try:
+        module_path = f"src.mitigation.post.{mitigation_cfg['name'].lower()}"
+        mitigation_module = importlib.import_module(module_path)
+        return mitigation_module.apply(y_pred, y_proba, y_test, A_test, mitigation_cfg.get("params", {}))
+    except ModuleNotFoundError:
+            raise ValueError(f"Mitigation method '{mitigation_cfg['name']}' not found in '{module_path}'")
+    except AttributeError:
+            raise ValueError(f"The module {module_path} must have a function 'apply(X, y, A, params)'")
+    
 # ===================== Metrics =====================
 def evaluate_performance(y_true, y_pred, y_proba):
 
@@ -202,8 +215,8 @@ def evaluate_fairness(y_true, y_pred, A, sensitive_attribute, target):
         unprivileged_groups=[{sensitive_attribute: 0}]
     )
 
-    pg_value = True  # sempre True para privileged_groups
-    ug_value = False  # sempre False para unprivileged_groups
+    pg_value = True  # True for privileged_groups
+    ug_value = False # False para unprivileged_groups
 
     return pd.DataFrame([{
         "statistical_parity_diff": metric.statistical_parity_difference(),
@@ -223,8 +236,6 @@ def evaluate_fairness(y_true, y_pred, A, sensitive_attribute, target):
         "ppv_unprivileged": metric.positive_predictive_value(privileged=ug_value)
         
     }])
-
-
 
 # ===================== Run Experiment =====================
 def run_experiment(config_path):
@@ -255,39 +266,39 @@ def run_experiment(config_path):
 
     # === Test ===
     if config["mitigation"]["in"]["name"] == 'none': # hasattr(model, "predict_proba"):
-        y_pred = model.predict(X_test)
+        y_pred  = model.predict(X_test)
         y_proba = model.predict_proba(X_test)[:, 1]
-        print('nao usei in mitigation')
+        print('nao usei in-process mitigation')
     else:
-        print(' usei in mitigation')
-        # Se o modelo for AIF360 in-processing
-        df_test = pd.DataFrame(X_test)
-        df_test['label'] = y_test.values
-        df_test['protected'] = y_test.values
+        print('usei in-process mitigation')
+
+        dataset_binary = pd.DataFrame(X_test)
+        dataset_binary['target'] = y_test.values
+        dataset_binary['sensitive'] = A_test.values
         dataset_test = BinaryLabelDataset(
-            df=df_test,
-            label_names=['label'],
-            protected_attribute_names=['protected'],
+            df=dataset_binary,
+            label_names=['target'],
+            protected_attribute_names=['sensitive'],
             favorable_label=1,
             unfavorable_label=0
         )
         y_pred = model.predict(dataset_test).labels.ravel()
-        y_proba = y_pred  # AIF360 não retorna probabilidade, apenas labels (ruim para log-loss, auc, roc..)
+        #y_proba = y_pred  # AIF360 não retorna probabilidade, apenas labels (ruim para log-loss, auc, roc..). Usar Fairlearn 
                           # Evitar AIF360 se você precisa de probabilidades calibradas — use modelos fairness-aware que integram com sklearn (como fairlearn).
-                          #   
+    
     # === Post-processing mitigation ===
     y_pred, y_proba = apply_mitigation_post(y_pred, y_proba, y_test, A_test, config["mitigation"]["post"])
 
     # === Info Model e Mitigation  ===
     model_info = pd.DataFrame([{
-        "id": str(uuid.uuid4()),
-        "data": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "id":    str(uuid.uuid4()),
+        "data":  datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "model": config["model"]["name"].lower()
     }])
 
     mitigation_info = pd.DataFrame([{
-        "pre": config["mitigation"]["pre"]["name"],
-        "in": config["mitigation"]["in"]["name"],
+        "pre":  config["mitigation"]["pre"]["name"],
+        "in":   config["mitigation"]["in"]["name"],
         "post": config["mitigation"]["post"]["name"]
     }])
 
@@ -315,4 +326,11 @@ def run_experiment(config_path):
 
     return results
 
-run_experiment(config_path="config.yaml")
+if __name__ == "__main__":
+
+    if len(sys.argv) > 1:
+        config_path = sys.argv[1]
+    else:
+        config_path = "config.yaml"
+
+    run_experiment(config_path)
