@@ -13,16 +13,6 @@ split:
   random_state: 50
 
 model:
-  #name: random_florest
-  #params: 
-  #   random_state: 50
-
-
-  #name: "logistic_regression" 
-  #params:
-  #  max_iter: 2000
-   # random_state: 50
-
   name: "neural_network"
   params:
     hidden_layer_sizes: [128, 64]
@@ -39,10 +29,10 @@ model:
 
 mitigation:
   pre:
-    name: "disparate_impact_remover" #"reweighing" # "none"
+    name: "none"
     params: {}
   in:
-    name: "none" #"adversarialdebiasing"
+    name: "none" 
     params: {}
   post:
     name: "none"

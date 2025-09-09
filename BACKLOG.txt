@@ -1,0 +1,44 @@
+
+sempre usar
+0 unprivileged
+1 privileged
+
+0 unfavorable label
+1 favorable label
+
+ROBUSTES
+- Comparar os datasets e transformações para garantir robustes.
+- PASSAR COMO PARAMETRO O ARQUIVO DE CONFIGURAÇÃO, 
+  ASSIM DÁ PARA DEIXAR VÁRIOS ARQUIVOS PRONTOS EM UMA PASTA E UM OUTRO PYTHON RODA TODOS.
+- UTILIZAR AS VARIÁVEIS DO ARTIGO Y, Y_HAT, A, ...
+
+DATASET
+- (OK) Baixar do UCI ou outro de melhor qualidade, já que nos comentários está como ruim (utilizei do scikit)
+- (OK) Realziar as análises do dataset melhor (utilizei seetviz)
+- Criar um src\dataset\ para o preprocessamento personalizado dos datasets
+
+BASELINE
+Fazer um pipeline para encontrar os melhores parâmetros do modelo para o melhor desempenho.
+Esses vão para o config models
+
+MODELO
+
+- Fiz uma alteração no seed de 42 para 0 e mudou BASTANTE as fairness matric. Estudar porque ocorre isso.
+ E se não tenho que fazer uma média com vários seeds randomicos.
+
+- (OK) parametros do premitigation passar para o modelo de forma genérica, hoje tá sample_weight
+
+MITIGATION
+
+É provavel que eu tenha que incluir a biblioteca (aif360, infairnes..) do in-processing no config, para diferenciar. 
+
+METRICS FAIRNESS
+- Utilizar ratios, pois é normalizado. Melhor para comparar nos gráficos.
+
+GRAFICOS
+- Criar graficos para análise
+
+LOGS
+- Salvar o dataset de teste ou validação do modelo e resultados. Objetivo, fazer grafico de GINI
+e outras análises individualizadas.
+- incluir passos e datasets
