@@ -1,4 +1,8 @@
-# tcc_ufrgs
+# TCC - Ufrgs
 
-# no warnings
+#
+
+
+
+### No warnings
 set TF_ENABLE_ONEDNN_OPTS=0
