@@ -10,7 +10,7 @@ from datetime import datetime
 
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder, StandardScaler
-from sklearn.metrics import (roc_auc_score, average_precision_score, matthews_corrcoef, log_loss, confusion_matrix)
+from sklearn.metrics import (roc_auc_score, average_precision_score, matthews_corrcoef, log_loss, confusion_matrix,  cohen_kappa_score, fbeta_score, jaccard_score, hamming_loss)
 
 from aif360.datasets import BinaryLabelDataset
 from aif360.metrics import ClassificationMetric
@@ -191,7 +191,11 @@ def evaluate_performance(y_true, y_pred, y_proba):
         "roc_auc": roc_auc_score(y_true, y_proba),
         "pr_auc": average_precision_score(y_true, y_proba),
         "mcc": matthews_corrcoef(y_true, y_pred),
-        "log_loss": log_loss(y_true, y_proba)
+        "log_loss": log_loss(y_true, y_proba),
+        "cohen_kappa_score": cohen_kappa_score(y_true, y_pred),
+        "fbeta_score": fbeta_score(y_true, y_pred, beta=2),
+        "jaccard_score": jaccard_score(y_true, y_pred),
+        "hamming_loss": hamming_loss(y_true, y_pred)
     }])
 
 
@@ -208,6 +212,7 @@ def evaluate_fairness(y_true, y_pred, A, sensitive_attribute, target):
     dataset_pred = dataset_true.copy()
     dataset_pred.labels = y_pred
 
+    # https://aif360.readthedocs.io/en/latest/modules/generated/aif360.metrics.ClassificationMetric.html
     metric = ClassificationMetric(
         dataset_true,
         dataset_pred,
@@ -219,22 +224,78 @@ def evaluate_fairness(y_true, y_pred, A, sensitive_attribute, target):
     ug_value = False # False para unprivileged_groups
 
     return pd.DataFrame([{
-        "statistical_parity_diff": metric.statistical_parity_difference(),
-        "equalized_odds_diff": metric.equalized_odds_difference(),
-        "average_odds_diff": metric.average_odds_difference(),
+        # difference
+        "statistical_parity_difference": metric.statistical_parity_difference(),
+        "equalized_odds_difference": metric.equalized_odds_difference(),
+        "equal_opportunity_difference": metric.equal_opportunity_difference(),
+        "average_odds_difference": metric.average_odds_difference(),
+        "error_rate_difference": metric.error_rate_difference(),
+        "average_abs_odds_difference": metric.average_abs_odds_difference(),
+        "average_predictive_value_difference": metric.average_predictive_value_difference(),
+        "generalized_equalized_odds_difference": metric.generalized_equalized_odds_difference(),
+        "false_positive_rate_difference": metric.false_positive_rate_difference(),
+        "false_discovery_rate_difference": metric.false_discovery_rate_difference(),
+        "false_negative_rate_difference": metric.false_negative_rate_difference(),
+        "false_omission_rate_difference": metric.false_omission_rate_difference(),
+        "true_positive_rate_difference": metric.true_positive_rate_difference(),
+
+        # between groups
+        "between_all_groups_coefficient_of_variation": metric.between_all_groups_coefficient_of_variation(),
+        "between_all_groups_generalized_entropy_index": metric.between_all_groups_generalized_entropy_index(alpha=2),
+        "between_group_generalized_entropy_index": metric.between_group_generalized_entropy_index(alpha=2),
+        "between_all_groups_theil_index": metric.between_all_groups_theil_index(),
+        "between_group_coefficient_of_variation": metric.between_group_coefficient_of_variation(),
+        "between_group_theil_index": metric.between_group_theil_index(),
+
+        
         "disparate_impact": metric.disparate_impact(),
+        "error_rate_ratio": metric.error_rate_ratio(),
+        "false_positive_rate_ratio": metric.false_positive_rate_ratio(),        
+        "false_discovery_rate_ratio": metric.false_discovery_rate_ratio(),
+        "false_negative_rate_ratio": metric.false_negative_rate_ratio(),
+        "false_omission_rate_ratio": metric.false_omission_rate_ratio(),
+
         "generalized_entropy_index": metric.generalized_entropy_index(),
+        "differential_fairness_bias_amplification": metric.differential_fairness_bias_amplification(concentration=1.0),
+        
+        # privileged x unprivileged
+
+
+        "tp_privileged": metric.num_true_positives(privileged=pg_value),
+        "tp_unprivileged": metric.num_true_positives(privileged=ug_value),
+        "tn_privileged": metric.num_true_negatives(privileged=pg_value),
+        "tn_unprivileged": metric.num_true_negatives(privileged=ug_value),
+        "fn_privileged": metric.num_false_negatives(privileged=pg_value),
+        "fn_unprivileged": metric.num_false_negatives(privileged=ug_value),
+        "fp_privileged": metric.num_false_positives(privileged=pg_value),
+        "fp_unprivileged": metric.num_false_positives(privileged=ug_value),                        
         "accuracy_privileged": metric.accuracy(privileged=pg_value),
         "accuracy_unprivileged": metric.accuracy(privileged=ug_value),
+        "recall_privileged": metric.recall(privileged=pg_value),
+        "recall_unprivileged": metric.recall(privileged=ug_value),
+        "specificity_privileged": metric.specificity(privileged=pg_value),
+        "specificity_unprivileged": metric.specificity(privileged=ug_value),    
+        "precision_privileged": metric.precision(privileged=pg_value),
+        "precision_unprivileged": metric.precision(privileged=ug_value),
+        "npv_privileged": metric.negative_predictive_value(privileged=pg_value),
+        "npv_unprivileged": metric.negative_predictive_value(privileged=ug_value),
+
+
         "selection_rate_privileged": metric.selection_rate(privileged=pg_value),
         "selection_rate_unprivileged": metric.selection_rate(privileged=ug_value),
         "false_positive_rate_privileged": metric.false_positive_rate(privileged=pg_value),
         "false_positive_rate_unprivileged": metric.false_positive_rate(privileged=ug_value),
         "false_negative_rate_privileged": metric.false_negative_rate(privileged=pg_value),
         "false_negative_rate_unprivileged": metric.false_negative_rate(privileged=ug_value),
+        "false_discovery_rate_privileged": metric.false_discovery_rate(privileged=pg_value),
+        "false_discovery_rate_uprivileged": metric.false_discovery_rate(privileged=ug_value),
+        "false_omission_rate_privileged": metric.false_omission_rate(privileged=pg_value),
+        "false_omission_rate_uprivileged": metric.false_omission_rate(privileged=ug_value),        
+        "error_rate_privileged": metric.error_rate(privileged=pg_value),
+        "error_rate_unprivileged": metric.error_rate(privileged=ug_value),
         "ppv_privileged": metric.positive_predictive_value(privileged=pg_value),
         "ppv_unprivileged": metric.positive_predictive_value(privileged=ug_value)
-        
+   
     }])
 
 # ===================== Run Experiment =====================
