@@ -1,0 +1,33 @@
+dataset:
+  name: "adult"
+  path: "datasets/adult_sklearn/adult_sklearn.csv"
+  target: "income"
+  sensitive: "sex"
+  privileged: ["Male"]        #1
+  unprivileged: ["Female"]    #0
+  favorable: ">50K"           #1
+  unfavorable: "<=50K"        #0
+
+split:
+  test_size: 0.2
+  random_state: 50
+
+model:
+  name: "xgboost"
+  params:
+    n_estimators: 200
+    max_depth: 6
+    learning_rate: 0.1
+    subsample: 0.8
+    colsample_bytree: 0.8
+
+mitigation:
+  pre:
+    name: "reweighing"
+    params: {}
+  in:
+    name: "none" 
+    params: {}
+  post:
+    name: "none"
+    params: {}
