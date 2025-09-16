@@ -22,9 +22,9 @@ def load_config(config_path="config.yaml"):
 
 # ===================== Data Preprocessing =====================
 
-def load_and_preprocess(dataset_cfg):
+def load_and_preprocess(dataset_cfg, path_dataset):
 
-    df = pd.read_csv(dataset_cfg["path"])
+    df = pd.read_csv(path_dataset)
 
     # garante que o nome da coluna alvo está certo
     if dataset_cfg["target"] not in df.columns:
@@ -246,8 +246,7 @@ def evaluate_fairness(y_true, y_pred, A, sensitive_attribute, target):
         "between_all_groups_theil_index": metric.between_all_groups_theil_index(),
         "between_group_coefficient_of_variation": metric.between_group_coefficient_of_variation(),
         "between_group_theil_index": metric.between_group_theil_index(),
-
-        
+      
         "disparate_impact": metric.disparate_impact(),
         "error_rate_ratio": metric.error_rate_ratio(),
         "false_positive_rate_ratio": metric.false_positive_rate_ratio(),        
@@ -259,8 +258,6 @@ def evaluate_fairness(y_true, y_pred, A, sensitive_attribute, target):
         "differential_fairness_bias_amplification": metric.differential_fairness_bias_amplification(concentration=1.0),
         
         # privileged x unprivileged
-
-
         "tp_privileged": metric.num_true_positives(privileged=pg_value),
         "tp_unprivileged": metric.num_true_positives(privileged=ug_value),
         "tn_privileged": metric.num_true_negatives(privileged=pg_value),
@@ -279,7 +276,6 @@ def evaluate_fairness(y_true, y_pred, A, sensitive_attribute, target):
         "precision_unprivileged": metric.precision(privileged=ug_value),
         "npv_privileged": metric.negative_predictive_value(privileged=pg_value),
         "npv_unprivileged": metric.negative_predictive_value(privileged=ug_value),
-
 
         "selection_rate_privileged": metric.selection_rate(privileged=pg_value),
         "selection_rate_unprivileged": metric.selection_rate(privileged=ug_value),
@@ -304,9 +300,14 @@ def run_experiment(config_path):
     config = load_config(config_path)
 
     # === Data ===
-    X, y, A = load_and_preprocess(config["dataset"])
-    X_train, X_test, y_train, y_test, A_train, A_test = split_data(X, y, A, config["split"])
+    # full
+    #X, y, A = load_and_preprocess(config["dataset"], config["dataset"]["path"])
+    #X_train, X_test, y_train, y_test, A_train, A_test = split_data(X, y, A, config["split"])
     
+    # train and test
+    X_train, y_train, A_train = load_and_preprocess(config["dataset"], config["dataset"]["path_train"])
+    X_test, y_test, A_test    = load_and_preprocess(config["dataset"], config["dataset"]["path_test"])
+
     # === Pre-processing mitigation ===
     X_train, y_train, A_train, params_pre_mitigation = apply_mitigation_pre(X_train, y_train, A_train, config["mitigation"]["pre"])
 
