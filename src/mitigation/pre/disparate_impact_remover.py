@@ -1,4 +1,4 @@
-def apply_dir(X_train, y_train, A_train, repair_level=1.0):
+def apply_dir(X_train, y_train, A_train,repair_level=1.0):
     """
     Aplica DisparateImpactRemover do AIF360 como técnica de pré-mitigation.
     Retorna os dados limpos e as features transformadas no dicionário de atributos.

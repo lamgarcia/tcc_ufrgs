@@ -3,10 +3,9 @@ import sys
 import uuid
 import yaml
 import importlib
-import numpy as np
+
 import pandas as pd
 from datetime import datetime
-
 
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder, StandardScaler
@@ -31,7 +30,8 @@ def load_and_preprocess(dataset_cfg, path_dataset):
         raise ValueError(f"Target column '{dataset_cfg['target']}' not found in dataset.")
 
     # remove linhas com valores ausentes
-    df.replace([np.inf, -np.inf], np.nan, inplace=True)
+    #df.replace([np.inf, -np.inf], np.nan, inplace=True)
+    df.replace([float('inf'), float('-inf')], float('nan'), inplace=True)
     df.dropna(inplace=True)
     
     # Filtra apenas categorias privilegiadas e não privilegiadas
@@ -44,26 +44,33 @@ def load_and_preprocess(dataset_cfg, path_dataset):
     df = df[df[sensitive_col].isin(privileged + unprivileged)]
         
     # Cria coluna binária para atributo sensível
-    df[f"{sensitive_col}_bin"] = df[sensitive_col].apply(
+    #df[f"{sensitive_col}_bin"] = df[sensitive_col].apply(
+    df[f"protected_bin"] = df[sensitive_col].apply(
+         
         lambda x: 1 if x in privileged else 0
     )
 
     # Cria coluna binária para o target
-    df[f"{target_col}_bin"] = df[target_col].apply(
+    #df[f"{target_col}_bin"] = df[target_col].apply(
+    df[f"label_bin"] = df[target_col].apply(         
         lambda x: 1 if x == favorable else 0
     )
 
     # Features e target
     #y = df[dataset_cfg["target"]]
-    y = df[f"{target_col}_bin"]
-    A = df[f"{sensitive_col}_bin"]
-    X = df.drop([dataset_cfg["target"], f"{target_col}_bin", sensitive_col, f"{sensitive_col}_bin"], axis=1)
+    y = df[f"label_bin"]
+    A = df[f"protected_bin"]
+    X = df.drop([dataset_cfg["target"], f"label_bin", sensitive_col, f"protected_bin"], axis=1)
 
-    # One-hot encoding e padronização
-    X_encoded = pd.get_dummies(X, drop_first=True)
-    X_scaled = StandardScaler().fit_transform(X_encoded)
+    # One-hot encoding 
+    X = pd.get_dummies(X, drop_first=True)
+    #X_encoded = pd.get_dummies(X)
 
-    return X_scaled, y, A
+    X = X.reset_index(drop=True)
+    y = y.reset_index(drop=True)
+    A = A.reset_index(drop=True)
+ 
+    return X, y, A
 
 
 def split_data(X, y, A, split_cfg):
@@ -308,8 +315,34 @@ def run_experiment(config_path):
     X_train, y_train, A_train = load_and_preprocess(config["dataset"], config["dataset"]["path_train"])
     X_test, y_test, A_test    = load_and_preprocess(config["dataset"], config["dataset"]["path_test"])
 
+
+    y_train.to_csv('y_train_antes.csv')
+    A_train.to_csv('A_train_antes.csv')
+
+    X_train, X_test = X_train.align(X_test, join="left", axis=1, fill_value=0)
+
+    X_train.to_csv('X_train_antes.csv')
+    X_test.to_csv('X_test_antes.csv')
+
+    colunas = X_train.columns.tolist()  
+    scaler = StandardScaler()
+    X_train = scaler.fit_transform(X_train)
+    X_test  = scaler.transform(X_test)
+    X_train = pd.DataFrame(X_train, columns=colunas)
+    X_test  = pd.DataFrame(X_test, columns=colunas)
+
+    X_train.to_csv('X_train_pos.csv')
+    X_test.to_csv('X_test_pos.csv')
+
+    
     # === Pre-processing mitigation ===
+#    y_train.to_csv('y_train_antes.csv')
+#    A_train.to_csv('A_train_antes.csv')
+
     X_train, y_train, A_train, params_pre_mitigation = apply_mitigation_pre(X_train, y_train, A_train, config["mitigation"]["pre"])
+
+#    y_train.to_csv('y_train_depois.csv')
+#    A_train.to_csv('A_train_depois.csv')
 
     # === Model training  ===
     model = train_model(
