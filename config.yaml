@@ -49,7 +49,7 @@ model:
 
 mitigation:
   pre:
-    name: "reweighing" #"reweighing" # "none"
+    name: "disparate_impact_remover" #"reweighing" # "none"
     params: {}
   in:
     name: "none" #"adversarialdebiasing"

@@ -20,10 +20,10 @@ def apply(X_train, y_train, A_train, params):
         privileged_groups=[{'protected_bin': 1}]
     )
     #rw.fit(dataset)
-    dataset_transf =  rw.fit_transform(dataset)
+    dataset = rw.fit_transform(dataset)
 
     # Obtém os pesos
-    sample_weight = dataset_transf.instance_weights
+    sample_weight = dataset.instance_weights
 
     # Validação
     assert len(X_train) == len(y_train)  == len(A_train) == len(sample_weight), \

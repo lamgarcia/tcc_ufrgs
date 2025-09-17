@@ -316,13 +316,7 @@ def run_experiment(config_path):
     X_test, y_test, A_test    = load_and_preprocess(config["dataset"], config["dataset"]["path_test"])
 
 
-    y_train.to_csv('y_train_antes.csv')
-    A_train.to_csv('A_train_antes.csv')
-
     X_train, X_test = X_train.align(X_test, join="left", axis=1, fill_value=0)
-
-    X_train.to_csv('X_train_antes.csv')
-    X_test.to_csv('X_test_antes.csv')
 
     colunas = X_train.columns.tolist()  
     scaler = StandardScaler()
@@ -331,18 +325,11 @@ def run_experiment(config_path):
     X_train = pd.DataFrame(X_train, columns=colunas)
     X_test  = pd.DataFrame(X_test, columns=colunas)
 
-    X_train.to_csv('X_train_pos.csv')
-    X_test.to_csv('X_test_pos.csv')
 
     
     # === Pre-processing mitigation ===
-#    y_train.to_csv('y_train_antes.csv')
-#    A_train.to_csv('A_train_antes.csv')
 
     X_train, y_train, A_train, params_pre_mitigation = apply_mitigation_pre(X_train, y_train, A_train, config["mitigation"]["pre"])
-
-#    y_train.to_csv('y_train_depois.csv')
-#    A_train.to_csv('A_train_depois.csv')
 
     # === Model training  ===
     model = train_model(
