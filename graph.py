@@ -5,15 +5,17 @@ import seaborn as sns
 # Carregar o CSV (substitua 'seu_arquivo.csv' pelo nome do seu arquivo)
 
 def carregar_dados():
-    return pd.read_csv('runs.csv')
+    return pd.read_csv('runs2.csv')
 
 if __name__ == "__main__":
 
-'    df = carregar_dados()
+    df = carregar_dados()
 
     # Criar coluna combinada: model + pre
     df['model_pre'] = df['model'].astype(str) + '_' + df['pre'].astype(str)
-
+    df['model_in'] = df['model'].astype(str) + '_' + df['in'].astype(str)
+    df['model_post'] = df['model'].astype(str) + '_' + df['post'].astype(str)
+    
     # Criar gráfico
     #plt.figure(figsize=(14, 8))
     sns.scatterplot(
@@ -33,6 +35,44 @@ if __name__ == "__main__":
     plt.tight_layout()
 
     plt.show()
+
+    sns.scatterplot(
+        data=df,
+        x='disparate_impact',
+        y='accuracy',
+        hue='model_in',  # agora usa a combinação model_pre
+        s=100,
+        palette='colorblind'  # ou 'Set1', 'husl', etc. — escolha uma paleta com boas cores distintas
+    )
+
+    plt.title('Accuracy vs Disparate Impact ', fontsize=16)
+    plt.xlabel('Disparate Impact', fontsize=12)
+    plt.ylabel('Accuracy', fontsize=12)
+    plt.axvline(x=1.0, color='red', linestyle='--', linewidth=2, label='Ideal Fairness (DI = 1)')
+    plt.legend(title='Model_In', bbox_to_anchor=(1.05, 1), loc='upper left')  # leg
+    plt.tight_layout()
+
+    plt.show()
+
+    sns.scatterplot(
+        data=df,
+        x='disparate_impact',
+        y='accuracy',
+        hue='model_post',  
+        s=100,
+        palette='colorblind'  # ou 'Set1', 'husl', etc. — escolha uma paleta com boas cores distintas
+    )
+
+    plt.title('Accuracy vs Disparate Impact ', fontsize=16)
+    plt.xlabel('Disparate Impact', fontsize=12)
+    plt.ylabel('Accuracy', fontsize=12)
+    plt.axvline(x=1.0, color='red', linestyle='--', linewidth=2, label='Ideal Fairness (DI = 1)')
+    plt.legend(title='Model_Post', bbox_to_anchor=(1.05, 1), loc='upper left')  # leg
+    plt.tight_layout()
+
+    plt.show()
+
+
 
 
     fairness_cols = [

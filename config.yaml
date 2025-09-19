@@ -1,56 +1,24 @@
-dataset:
-  name: "adult"
-  path: "datasets/adult_sklearn/adult_sklearn.csv"
-  path_train: "datasets/adult_sklearn/adult_sklearn_train.csv"
-  path_test: "datasets/adult_sklearn/adult_sklearn_test.csv"
-  target: "income"
-  sensitive: "sex"
-  privileged: ["Male"]        #1
-  unprivileged: ["Female"]    #0
-  favorable: ">50K"           #1
-  unfavorable: "<=50K"        #0
-
-
-model:
-  #name: "xgboost"
-  #params:
-  #  n_estimators: 200
-  #  max_depth: 6
-  #  learning_rate: 0.1
-  #  subsample: 0.8
-  #  colsample_bytree: 0.8
-
-  name: random_florest
-  params: 
-     random_state: 50
-
-
-  #name: "logistic_regression" 
-  #params:
-  #  max_iter: 2000
-   # random_state: 50
-
-  #name: "neural_network"
-  #params:
-  #  hidden_layer_sizes: [128, 64]
-  #  activation: "relu"
-  #  solver: "adam"
-  #  alpha: 0.0001
-  #  batch_size: 32
-  #  learning_rate_init: 0.001
-  #  max_iter: 300
-  #  early_stopping: true
-  #  validation_fraction: 0.1
-  #  n_iter_no_change: 10
-  #  random_state: 50
-
-mitigation:
-  pre:
-    name: "none" #"reweighing" # "disparate_impact_remover" #"reweighing" # "none"
-    params: {}
-  in:
-    name: "grid_search" #"prejudice_remover" # "exponentiated_gradient" #"none"
-    params: {}
-  post:
-    name: "none" #"reject_option_classification" # "equalized_odds_postprocessing" #"none"
-    params: {}
+"dataset":
+  "name": "adult"
+  "path": "datasets/adult_sklearn/adult_sklearn.csv"
+  "path_train": "datasets/adult_sklearn/adult_sklearn_train.csv"
+  "path_test": "datasets/adult_sklearn/adult_sklearn_test.csv"
+  "target": "income"
+  "sensitive": "sex"
+  "privileged": ["Male"]
+  "unprivileged": ["Female"]
+  "favorable": ">50K"
+  "unfavorable": "<=50K"
+"model":
+  "name": "neural_network"
+  "params": {}
+"mitigation":
+  "pre":
+    "name": "reweighing"
+    "params": {}
+  "in":
+    "name": "grid_search"
+    "params": {}
+  "post":
+    "name": "none"
+    "params": {}

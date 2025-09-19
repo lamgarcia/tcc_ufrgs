@@ -1,37 +1,32 @@
-def apply(model, X_train, y_train, A_train, mitigation_cfg):
-
-    """
-    Aplica mitigação in-processing usando Fairlearn ExponentiatedGradient
-    mantendo o modelo original como estimador base.
-
-    model : objeto sklearn-like
-        Modelo já treinado (RandomForest, XGBClassifier, LogisticRegression etc.)
-    X_train : DataFrame ou array-like
-        Features de treino.
-    y_train : array-like
-        Labels binários de treino.
-    A_train : array-like
-        Atributo protegido binário de treino.
-    mitigation_cfg : dict
-        Parâmetros da técnica, ex: {"constraint": "DemographicParity", "eps": 0.01}
-    """
+def apply(model, X_train, y_train, A_train, params):
 
     from fairlearn.reductions import ExponentiatedGradient, DemographicParity, EqualizedOdds
-
+    import inspect
+    
     # Seleciona constraint
-    constraint_type = mitigation_cfg.get("constraint", "DemographicParity")
+    constraint_type =  params['constraint']
+    print ("constraint: ",constraint_type )
+
     if constraint_type == "DemographicParity":
         constraint = DemographicParity()
     elif constraint_type == "EqualizedOdds":
         constraint = EqualizedOdds()
     else:
-        raise ValueError(f"Constraint {constraint_type} não suportada.")
+        raise ValueError(f"Constraint {constraint_type} not supported.")
+    
+    # --- valida compatibilidade do modelo com o paramentor sample_weight ---
+    if "sample_weight" not in inspect.signature(model.fit).parameters:
+        # Wrapper simples que ignora sample_weight
+        class Wrapper(model.__class__):
+            def fit(self, X, y, sample_weight=None, **kwargs):
+                return super().fit(X, y, **kwargs)
+        model = Wrapper(**model.get_params())
 
     # Cria mitigador usando o modelo original como estimador base
     mitigator = ExponentiatedGradient(
         estimator=model,
         constraints=constraint,
-        eps=mitigation_cfg.get("eps", 0.01)
+        eps=params['eps']
     )
 
     # Ajusta o mitigador (pode re-treinar pequenas variações)

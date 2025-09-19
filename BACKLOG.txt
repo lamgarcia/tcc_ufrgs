@@ -6,7 +6,8 @@ sempre usar
 0 unfavorable label
 1 favorable label
 
-- colocar parametros do preprocessing no yalm
+- colocar parametros do preprocessing, IN E POS, E TAMBÉM DOS MODELOS no yalm
+ PARA ISSO CRIAR UM OUTROS ARQUIVOS DE PARAMETROS PARA CADA MODELO PARA SER LIDO NO GERA_CONFIGS.PY
 
 ROBUSTES
 - Comparar os datasets e transformações para garantir robustes.
@@ -20,7 +21,7 @@ DATASET
 - Criar um src\dataset\ para o preprocessamento personalizado dos datasets
 
 BASELINE
-Fazer um pipeline para encontrar os melhores parâmetros do modelo para o melhor desempenho.
+- bUSCAR NA LITERATURA MELHORES PARAMETROS DOS MODELOS , JÁ UTILIZADO EM ARTIGOS.
 Esses vão para o config models
 
 MODELO
@@ -32,7 +33,7 @@ MODELO
 
 MITIGATION
 
-É provavel que eu tenha que incluir a biblioteca (aif360, infairnes..) do in-processing no config, para diferenciar. 
+- (OK) É provavel que eu tenha que incluir a biblioteca (aif360, infairnes..) do in-processing no config, para diferenciar. 
 
 METRICS FAIRNESS
 - Utilizar ratios, pois é normalizado. Melhor para comparar nos gráficos.

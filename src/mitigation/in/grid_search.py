@@ -1,4 +1,4 @@
-def apply(model, X_train, y_train, A_train, mitigation_cfg):
+def apply(model, X_train, y_train, A_train, params):
     """
     Aplica mitigação in-processing usando Fairlearn GridSearchReduction
     mantendo o modelo original como estimador base.
@@ -17,17 +17,18 @@ def apply(model, X_train, y_train, A_train, mitigation_cfg):
 
     from fairlearn.reductions import GridSearch, DemographicParity, EqualizedOdds
     import inspect
+  
+    constraint_type =  params['constraint']
+    print ("constraint: ",constraint_type )
 
-    # Seleciona constraint
-    constraint_type = mitigation_cfg.get("constraint", "DemographicParity")
     if constraint_type == "DemographicParity":
         constraint = DemographicParity()
     elif constraint_type == "EqualizedOdds":
         constraint = EqualizedOdds()
     else:
-        raise ValueError(f"Constraint {constraint_type} não suportada.")
-    
-    # --- valida compatibilidade do modelo com o paramentor sample_weight do grid search---
+        raise ValueError(f"Constraint {constraint_type} not supported.")
+        
+    # --- valida compatibilidade do modelo com o paramentor sample_weight ---
     if "sample_weight" not in inspect.signature(model.fit).parameters:
         # Wrapper simples que ignora sample_weight
         class Wrapper(model.__class__):
@@ -39,7 +40,7 @@ def apply(model, X_train, y_train, A_train, mitigation_cfg):
     mitigator = GridSearch(
         estimator=model,
         constraints=constraint,
-        grid_size=mitigation_cfg.get("grid_size", 3)
+        grid_size=params['grid_size']
     )
 
     # Ajusta o mitigador
