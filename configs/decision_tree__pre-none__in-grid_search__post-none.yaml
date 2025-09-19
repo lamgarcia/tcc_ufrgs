@@ -1,0 +1,24 @@
+"dataset":
+  "name": "adult"
+  "path": "datasets/adult_sklearn/adult_sklearn.csv"
+  "path_train": "datasets/adult_sklearn/adult_sklearn_train.csv"
+  "path_test": "datasets/adult_sklearn/adult_sklearn_test.csv"
+  "target": "income"
+  "sensitive": "sex"
+  "privileged": ["Male"]
+  "unprivileged": ["Female"]
+  "favorable": ">50K"
+  "unfavorable": "<=50K"
+"model":
+  "name": "decision_tree"
+  "params": {}
+"mitigation":
+  "pre":
+    "name": "none"
+    "params": {}
+  "in":
+    "name": "grid_search"
+    "params": {}
+  "post":
+    "name": "none"
+    "params": {}

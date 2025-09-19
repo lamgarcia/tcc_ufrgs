@@ -10,9 +10,6 @@ dataset:
   favorable: ">50K"           #1
   unfavorable: "<=50K"        #0
 
-split:
-  test_size: 0.2
-  random_state: 50
 
 model:
   #name: "xgboost"
@@ -49,11 +46,11 @@ model:
 
 mitigation:
   pre:
-    name: "disparate_impact_remover" #"reweighing" # "none"
+    name: "none" #"reweighing" # "disparate_impact_remover" #"reweighing" # "none"
     params: {}
   in:
-    name: "none" #"adversarialdebiasing"
+    name: "grid_search" #"prejudice_remover" # "exponentiated_gradient" #"none"
     params: {}
   post:
-    name: "none"
+    name: "none" #"reject_option_classification" # "equalized_odds_postprocessing" #"none"
     params: {}

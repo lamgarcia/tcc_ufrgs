@@ -1,4 +1,5 @@
 import os
+import time
 import sys
 import uuid
 import yaml
@@ -73,14 +74,14 @@ def load_and_preprocess(dataset_cfg, path_dataset):
     return X, y, A
 
 
-def split_data(X, y, A, split_cfg):
-    X_train, X_test, y_train, y_test, A_train, A_test = train_test_split(
-        X, y, A,
-        test_size=split_cfg["test_size"],
-        random_state=split_cfg["random_state"]
-    )
-
-    return X_train, X_test, y_train, y_test, A_train, A_test
+#def split_data(X, y, A, split_cfg):
+#    X_train, X_test, y_train, y_test, A_train, A_test = train_test_split(
+#        X, y, A,
+#        test_size=split_cfg["test_size"],
+#        random_state=split_cfg["random_state"]
+#    )
+#
+#    return X_train, X_test, y_train, y_test, A_train, A_test
 
 def _get_valid_fit_params(fit_method, params):
     """
@@ -142,7 +143,7 @@ def apply_mitigation_pre(X_train, y_train, A_train, mitigation_cfg):
     except ModuleNotFoundError:
         raise ValueError(f"Mitigation method '{mitigation_cfg['name']}' not found in '{module_path}'")
     except AttributeError:
-            raise ValueError(f"The module {module_path} must have a function 'apply(X, y, A, params)'")
+            raise ValueError(f"The module {module_path} must have a function 'apply(X_train, y_train, A_train, params)'")
     
 def apply_mitigation_in(model, X_train, y_train, A_train, mitigation_cfg):
     
@@ -156,7 +157,7 @@ def apply_mitigation_in(model, X_train, y_train, A_train, mitigation_cfg):
     except ModuleNotFoundError:
             raise ValueError(f"Mitigation method '{mitigation_cfg['name']}' not found in '{module_path}'")
     except AttributeError:
-            raise ValueError(f"The module {module_path} must have a function 'apply(model, X, y, A, params)'")
+            raise ValueError(f"The module {module_path} must have a function 'apply(model, X_train, y_train, A_train, params)'")
 
 def apply_mitigation_post(y_pred, y_proba, y_test, A_test, mitigation_cfg):
 
@@ -169,7 +170,7 @@ def apply_mitigation_post(y_pred, y_proba, y_test, A_test, mitigation_cfg):
     except ModuleNotFoundError:
             raise ValueError(f"Mitigation method '{mitigation_cfg['name']}' not found in '{module_path}'")
     except AttributeError:
-            raise ValueError(f"The module {module_path} must have a function 'apply(X, y, A, params)'")
+            raise ValueError(f"The module {module_path} must have a function 'apply(y_pred, y_proba, y_test, A_test, params)'")
     
 # ===================== Metrics =====================
 def evaluate_performance(y_true, y_pred, y_proba):
@@ -304,6 +305,8 @@ def evaluate_fairness(y_true, y_pred, A, sensitive_attribute, target):
 # ===================== Run Experiment =====================
 def run_experiment(config_path):
 
+    start_time = time.time()
+
     config = load_config(config_path)
 
     # === Data ===
@@ -324,9 +327,7 @@ def run_experiment(config_path):
     X_test  = scaler.transform(X_test)
     X_train = pd.DataFrame(X_train, columns=colunas)
     X_test  = pd.DataFrame(X_test, columns=colunas)
-
-
-    
+   
     # === Pre-processing mitigation ===
 
     X_train, y_train, A_train, params_pre_mitigation = apply_mitigation_pre(X_train, y_train, A_train, config["mitigation"]["pre"])
@@ -347,24 +348,33 @@ def run_experiment(config_path):
     )
 
     # === Test ===
-    if config["mitigation"]["in"]["name"] == 'none': # hasattr(model, "predict_proba"):
-        y_pred  = model.predict(X_test)
-        y_proba = model.predict_proba(X_test)[:, 1]
-        print('nao usei in-process mitigation')
-    else:
-        print('usei in-process mitigation')
+    y_pred  = model.predict(X_test)
 
-        dataset_binary = pd.DataFrame(X_test)
-        dataset_binary['target'] = y_test.values
-        dataset_binary['sensitive'] = A_test.values
-        dataset_test = BinaryLabelDataset(
-            df=dataset_binary,
-            label_names=['target'],
-            protected_attribute_names=['sensitive'],
-            favorable_label=1,
-            unfavorable_label=0
-        )
-        y_pred = model.predict(dataset_test).labels.ravel()
+    if hasattr(model, "predict_proba"):
+        y_proba = model.predict_proba(X_test)[:, 1]
+    else:
+        y_proba = y_pred.astype(float)  # transforma 0/1 em float # ruim para roc_auc e outras que usam proba, pq colocamos apenas o pred e não proba
+
+    
+    #y_proba = model.predict_proba(X_test)[:, 1]
+    
+    #if config["mitigation"]["in"]["name"] == 'none': # hasattr(model, "predict_proba"):
+    #    y_pred  = model.predict(X_test)
+    #    y_proba = model.predict_proba(X_test)[:, 1]
+    #    print('nao usei in-process mitigation')
+    #else:
+    #    print('usei in-process mitigation')
+    #    dataset_binary = pd.DataFrame(X_test)
+    #    dataset_binary['target'] = y_test.values
+    #    dataset_binary['sensitive'] = A_test.values
+    #    dataset_test = BinaryLabelDataset(
+    #        df=dataset_binary,
+    #        label_names=['target'],
+    #        protected_attribute_names=['sensitive'],
+    #        favorable_label=1,
+    #        unfavorable_label=0
+    #    )
+    #    y_pred = model.predict(dataset_test).labels.ravel()
         #y_proba = y_pred  # AIF360 não retorna probabilidade, apenas labels (ruim para log-loss, auc, roc..). Usar Fairlearn 
                           # Evitar AIF360 se você precisa de probabilidades calibradas — use modelos fairness-aware que integram com sklearn (como fairlearn).
     
@@ -375,6 +385,7 @@ def run_experiment(config_path):
     model_info = pd.DataFrame([{
         "id":    str(uuid.uuid4()),
         "data":  datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "time_execution": time.time() - start_time ,
         "model": config["model"]["name"].lower()
     }])
 
