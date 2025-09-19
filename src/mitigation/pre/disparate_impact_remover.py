@@ -19,7 +19,7 @@ def apply(X_train, y_train, A_train, params):
     )
 
     # Aplica Disparate Impact Remover
-    di = DisparateImpactRemover(repair_level=1.0)  # 1.0 = reparação total
+    di = DisparateImpactRemover(repair_level=params['repair_level']) 
     dataset = di.fit_transform(dataset)
 
     features = pd.DataFrame(dataset.features, columns=orig_cols_X + ['protected_bin']) # retorna com o protected, tem que retirar para manter padrão

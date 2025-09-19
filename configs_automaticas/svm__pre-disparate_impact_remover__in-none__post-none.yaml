@@ -15,7 +15,8 @@
 "mitigation":
   "pre":
     "name": "disparate_impact_remover"
-    "params": {}
+    "params":
+      "repair_level": 1.0
   "in":
     "name": "none"
     "params": {}

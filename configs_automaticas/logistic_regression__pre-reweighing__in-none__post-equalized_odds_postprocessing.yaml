@@ -11,7 +11,8 @@
   "unfavorable": "<=50K"
 "model":
   "name": "logistic_regression"
-  "params": {}
+  "params":
+    "max_iter": 2000
 "mitigation":
   "pre":
     "name": "reweighing"

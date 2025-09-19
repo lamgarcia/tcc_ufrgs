@@ -15,10 +15,13 @@
 "mitigation":
   "pre":
     "name": "disparate_impact_remover"
-    "params": {}
+    "params":
+      "repair_level": 1.0
   "in":
     "name": "exponentiated_gradient"
-    "params": {}
+    "params":
+      "constraint": "DemographicParity"
+      "eps": 0.01
   "post":
     "name": "none"
     "params": {}

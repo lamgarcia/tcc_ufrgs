@@ -54,7 +54,8 @@ mitigation:
       params: {}
 
     - name: "disparate_impact_remover"
-      params: {}
+      params: 
+        repair_level: 1.0 # 1.0 = reparação total
 
   in:
     - name: "none"
@@ -67,8 +68,8 @@ mitigation:
 
     - name: "exponentiated_gradient"
       params: 
-	constraint: "DemographicParity" #EqualizedOdds
-	eps: 0.01
+        constraint: "DemographicParity" #EqualizedOdds
+        eps: 0.01
 
   post:
     - name: "none"

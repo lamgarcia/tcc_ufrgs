@@ -11,14 +11,17 @@
   "unfavorable": "<=50K"
 "model":
   "name": "logistic_regression"
-  "params": {}
+  "params":
+    "max_iter": 2000
 "mitigation":
   "pre":
     "name": "reweighing"
     "params": {}
   "in":
     "name": "exponentiated_gradient"
-    "params": {}
+    "params":
+      "constraint": "DemographicParity"
+      "eps": 0.01
   "post":
     "name": "none"
     "params": {}

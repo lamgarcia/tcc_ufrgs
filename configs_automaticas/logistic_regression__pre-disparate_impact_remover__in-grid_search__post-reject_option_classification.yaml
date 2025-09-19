@@ -11,11 +11,13 @@
   "unfavorable": "<=50K"
 "model":
   "name": "logistic_regression"
-  "params": {}
+  "params":
+    "max_iter": 2000
 "mitigation":
   "pre":
     "name": "disparate_impact_remover"
-    "params": {}
+    "params":
+      "repair_level": 1.0
   "in":
     "name": "grid_search"
     "params": {}
