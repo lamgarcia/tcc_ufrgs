@@ -67,6 +67,15 @@ def load_and_preprocess(dataset_cfg, path_dataset):
     X = pd.get_dummies(X, drop_first=True)
     #X_encoded = pd.get_dummies(X)
 
+    X.columns = (
+        X.columns.astype(str)
+        .str.replace("[", "(", regex=False)
+        .str.replace("]", ")", regex=False)
+        .str.replace("<", "lt_", regex=False)
+        .str.replace(">", "gt_", regex=False)
+        .str.replace(" ", "_", regex=False)
+    )
+
     X = X.reset_index(drop=True)
     y = y.reset_index(drop=True)
     A = A.reset_index(drop=True)
@@ -408,7 +417,7 @@ def run_experiment(config_path):
     results = pd.concat([model_info, mitigation_info, performance_metrics, fairness_metrics], axis=1)
 
     # === Save results ===
-    results_file = "runs.csv"
+    results_file = "runs_"+config["dataset"]["name"]+".csv"
     if os.path.exists(results_file):
         results.to_csv(results_file, mode="a", header=False, index=False)
     else:

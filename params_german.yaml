@@ -1,14 +1,14 @@
 dataset:
-  name: "adult"
-  path: "datasets/adult_sklearn/adult_sklearn.csv"
-  path_train: "datasets/adult_sklearn/adult_sklearn_train.csv"
-  path_test: "datasets/adult_sklearn/adult_sklearn_test.csv"
-  target: "income"
+  name: "german"
+  path: "datasets/german_sklearn/german_sklearn.csv"
+  path_train: "datasets/german_sklearn/german_sklearn_train.csv"
+  path_test: "datasets/german_sklearn/german_sklearn_test.csv"
+  target: "class"
   sensitive: "sex"
-  privileged: ["Male"]        #1
-  unprivileged: ["Female"]    #0
-  favorable: ">50K"           #1
-  unfavorable: "<=50K"        #0
+  privileged: ["male"]        #1
+  unprivileged: ["female"]    #0
+  favorable: "good"           #1
+  unfavorable: "bad"        #0
 
 model:
   - name: "xgboost"

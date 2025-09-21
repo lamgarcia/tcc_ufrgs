@@ -8,6 +8,9 @@ sempre usar
 
 - colocar parametros do preprocessing, IN E POS, E TAMBÉM DOS MODELOS no yalm
  PARA ISSO CRIAR UM OUTROS ARQUIVOS DE PARAMETROS PARA CADA MODELO PARA SER LIDO NO GERA_CONFIGS.PY
+- no codigo e config faz referencia a sensitive e target, mas na maioria das tecnicas chama de protected ou privileged.
+  Unificar os conceitos no codigo.
+
 
 ROBUSTES
 - Comparar os datasets e transformações para garantir robustes.

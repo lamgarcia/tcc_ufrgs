@@ -2,6 +2,7 @@ import os
 import glob
 import subprocess
 import sys
+from datetime import datetime
 
 def main():
     configs_dir = ".\configs"
@@ -20,7 +21,8 @@ def main():
 
 
     for yaml_file in yaml_files:
-        print(f"Run: python run_exp.py {yaml_file}")
+        dt = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        print(f"{dt} - Run: python run_exp.py {yaml_file}")
         try:
             # Executa o comando
             result = subprocess.run(
