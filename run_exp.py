@@ -15,6 +15,9 @@ from sklearn.metrics import (roc_auc_score, average_precision_score, matthews_co
 from aif360.datasets import BinaryLabelDataset
 from aif360.metrics import ClassificationMetric
 
+from sklearnex import patch_sklearn
+patch_sklearn()
+
 # ===================== Config Loader =====================
 def load_config(config_path="config.yaml"):
     with open(config_path, "r") as f:
@@ -240,26 +243,54 @@ def evaluate_fairness(y_true, y_pred, A, sensitive_attribute, target):
     pg_value = True  # True for privileged_groups
     ug_value = False # False para unprivileged_groups
 
-    #fpr_priv = metric.false_positive_rate(privileged=pg_value)
-    #fpr_unpriv = metric.false_positive_rate(privileged=ug_value)
+    fpr_priv = metric.false_positive_rate(privileged=pg_value)
+    fpr_unpriv = metric.false_positive_rate(privileged=ug_value)
+    fpr_ratio = (fpr_priv / fpr_unpriv) if fpr_unpriv > 0 else None
+
+    fnr_priv = metric.false_negative_rate(privileged=pg_value)
+    fnr_unpriv =  metric.false_negative_rate(privileged=ug_value)
+    fnr_ratio = fnr_priv / fnr_unpriv if fnr_unpriv > 0 else None    
+
+    tpr_priv = metric.recall(privileged=pg_value)
+    tpr_unpriv = metric.recall(privileged=ug_value)
+    equal_opportunity_ratio = tpr_priv / tpr_unpriv if tpr_unpriv > 0 else None    #tpr_ratio
+
+    tnr_priv =  metric.specificity(privileged=pg_value)
+    tnr_unpriv =  metric.specificity(privileged=ug_value)
+    tnr_ratio = (tnr_priv / tnr_unpriv) if tnr_unpriv > 0 else None
+
+
+    npv_priv = metric.negative_predictive_value(privileged=pg_value)
+    npv_unpriv = metric.negative_predictive_value(privileged=ug_value)
+    npv_ratio =  (npv_priv / npv_unpriv) if npv_unpriv > 0 else None  
+
+    ppv_priv = metric.positive_predictive_value(privileged=pg_value) # precision
+    ppv_unpriv = metric.positive_predictive_value(privileged=ug_value)
+    predictive_parity_ratio = (ppv_priv / ppv_unpriv) if ppv_unpriv > 0 else None  #ppv_ratio
     
-    #tpr_priv = metric.recall(privileged=pg_value)
-    #tpr_unpriv = metric.recall(privileged=ug_value)
-    #equal_opportunity_ratio = tpr_priv / tpr_unpriv f tpr_unpriv > 0 else None
-
-    #ppv_priv = metric.precision(privileged=pg_value)
-    #ppv_unpriv = metric.precision(privileged=ug_value)
-    #predictive_parity_ratio = (ppv_priv / ppv_unpriv) if ppv_unpriv > 0 else None
-
     return pd.DataFrame([{
+        #ratios
+
+        "disparate_impact": metric.disparate_impact(),                                                      
+        "equal_opportunity_ratio": equal_opportunity_ratio,
+        "predictive_parity_ratio": predictive_parity_ratio,
+        "tnr_ratio": tnr_ratio,
+        "fpr_ratio": fpr_ratio,
+        "npv_ratio": npv_ratio,
+        "fnr_ratio": fnr_ratio,
+        "error_rate_ratio": metric.error_rate_ratio(),
+        "average_odds_difference": metric.average_odds_difference(),
+        "average_predictive_value_difference": metric.average_predictive_value_difference(),
+        "false_positive_rate_ratio": metric.false_positive_rate_ratio(),        
+        "false_discovery_rate_ratio": metric.false_discovery_rate_ratio(),
+        "false_negative_rate_ratio": metric.false_negative_rate_ratio(),
+        "false_omission_rate_ratio": metric.false_omission_rate_ratio(),
+
         # difference
         "statistical_parity_difference": metric.statistical_parity_difference(),
         "equalized_odds_difference": metric.equalized_odds_difference(),
         "equal_opportunity_difference": metric.equal_opportunity_difference(),
-        "average_odds_difference": metric.average_odds_difference(),
         "error_rate_difference": metric.error_rate_difference(),
-        "average_abs_odds_difference": metric.average_abs_odds_difference(),
-        "average_predictive_value_difference": metric.average_predictive_value_difference(),
         "generalized_equalized_odds_difference": metric.generalized_equalized_odds_difference(),
         "false_positive_rate_difference": metric.false_positive_rate_difference(),
         "false_discovery_rate_difference": metric.false_discovery_rate_difference(),
@@ -275,13 +306,6 @@ def evaluate_fairness(y_true, y_pred, A, sensitive_attribute, target):
         "between_group_coefficient_of_variation": metric.between_group_coefficient_of_variation(),
         "between_group_theil_index": metric.between_group_theil_index(),
       
-        "disparate_impact": metric.disparate_impact(),                                                                #IMPORTANTE
-        "error_rate_ratio": metric.error_rate_ratio(),
-        "false_positive_rate_ratio": metric.false_positive_rate_ratio(),        
-        "false_discovery_rate_ratio": metric.false_discovery_rate_ratio(),
-        "false_negative_rate_ratio": metric.false_negative_rate_ratio(),
-        "false_omission_rate_ratio": metric.false_omission_rate_ratio(),
-
         "generalized_entropy_index": metric.generalized_entropy_index(),
         "differential_fairness_bias_amplification": metric.differential_fairness_bias_amplification(concentration=1.0),
         
@@ -296,29 +320,28 @@ def evaluate_fairness(y_true, y_pred, A, sensitive_attribute, target):
         "fp_unprivileged": metric.num_false_positives(privileged=ug_value),                        
         "accuracy_privileged": metric.accuracy(privileged=pg_value),
         "accuracy_unprivileged": metric.accuracy(privileged=ug_value),
-        "recall_privileged": metric.recall(privileged=pg_value),
-        "recall_unprivileged": metric.recall(privileged=ug_value),
-        "specificity_privileged": metric.specificity(privileged=pg_value),
-        "specificity_unprivileged": metric.specificity(privileged=ug_value),    
-        "precision_privileged": metric.precision(privileged=pg_value),
-        "precision_unprivileged": metric.precision(privileged=ug_value),
-        "npv_privileged": metric.negative_predictive_value(privileged=pg_value),
-        "npv_unprivileged": metric.negative_predictive_value(privileged=ug_value),
+        "recall_privileged":        tpr_priv,
+        "recall_unprivileged":      tpr_unpriv,
+        "specificity_privileged":   tnr_priv,
+        "specificity_unprivileged": tnr_unpriv,    
+        "precision_privileged":     ppv_priv,
+        "precision_unprivileged":   ppv_unpriv,
+        "npv_privileged": npv_priv,
+        "npv_unprivileged": npv_unpriv,
 
         "selection_rate_privileged": metric.selection_rate(privileged=pg_value),
         "selection_rate_unprivileged": metric.selection_rate(privileged=ug_value),
-        "false_positive_rate_privileged": metric.false_positive_rate(privileged=pg_value),
-        "false_positive_rate_unprivileged": metric.false_positive_rate(privileged=ug_value),
-        "false_negative_rate_privileged": metric.false_negative_rate(privileged=pg_value),
-        "false_negative_rate_unprivileged": metric.false_negative_rate(privileged=ug_value),
+        "false_positive_rate_privileged": fpr_priv,
+        "false_positive_rate_unprivileged": fpr_unpriv,
+        "false_negative_rate_privileged": fnr_priv,
+        "false_negative_rate_unprivileged": fnr_unpriv,
         "false_discovery_rate_privileged": metric.false_discovery_rate(privileged=pg_value),
         "false_discovery_rate_uprivileged": metric.false_discovery_rate(privileged=ug_value),
         "false_omission_rate_privileged": metric.false_omission_rate(privileged=pg_value),
         "false_omission_rate_uprivileged": metric.false_omission_rate(privileged=ug_value),        
         "error_rate_privileged": metric.error_rate(privileged=pg_value),
-        "error_rate_unprivileged": metric.error_rate(privileged=ug_value),
-        "ppv_privileged": metric.positive_predictive_value(privileged=pg_value),
-        "ppv_unprivileged": metric.positive_predictive_value(privileged=ug_value)
+        "error_rate_unprivileged": metric.error_rate(privileged=ug_value)
+
    
     }])
 
