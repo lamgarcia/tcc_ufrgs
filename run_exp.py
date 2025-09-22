@@ -240,6 +240,17 @@ def evaluate_fairness(y_true, y_pred, A, sensitive_attribute, target):
     pg_value = True  # True for privileged_groups
     ug_value = False # False para unprivileged_groups
 
+    #fpr_priv = metric.false_positive_rate(privileged=pg_value)
+    #fpr_unpriv = metric.false_positive_rate(privileged=ug_value)
+    
+    #tpr_priv = metric.recall(privileged=pg_value)
+    #tpr_unpriv = metric.recall(privileged=ug_value)
+    #equal_opportunity_ratio = tpr_priv / tpr_unpriv f tpr_unpriv > 0 else None
+
+    #ppv_priv = metric.precision(privileged=pg_value)
+    #ppv_unpriv = metric.precision(privileged=ug_value)
+    #predictive_parity_ratio = (ppv_priv / ppv_unpriv) if ppv_unpriv > 0 else None
+
     return pd.DataFrame([{
         # difference
         "statistical_parity_difference": metric.statistical_parity_difference(),
@@ -264,7 +275,7 @@ def evaluate_fairness(y_true, y_pred, A, sensitive_attribute, target):
         "between_group_coefficient_of_variation": metric.between_group_coefficient_of_variation(),
         "between_group_theil_index": metric.between_group_theil_index(),
       
-        "disparate_impact": metric.disparate_impact(),
+        "disparate_impact": metric.disparate_impact(),                                                                #IMPORTANTE
         "error_rate_ratio": metric.error_rate_ratio(),
         "false_positive_rate_ratio": metric.false_positive_rate_ratio(),        
         "false_discovery_rate_ratio": metric.false_discovery_rate_ratio(),
