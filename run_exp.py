@@ -304,8 +304,7 @@ def evaluate_fairness(y_true, y_pred, A, sensitive_attribute, target):
         "between_group_generalized_entropy_index": metric.between_group_generalized_entropy_index(alpha=2),
         "between_all_groups_theil_index": metric.between_all_groups_theil_index(),
         "between_group_coefficient_of_variation": metric.between_group_coefficient_of_variation(),
-        "between_group_theil_index": metric.between_group_theil_index(),
-      
+        "between_group_theil_index": metric.between_group_theil_index(),  
         "generalized_entropy_index": metric.generalized_entropy_index(),
         "differential_fairness_bias_amplification": metric.differential_fairness_bias_amplification(concentration=1.0),
         
@@ -341,8 +340,6 @@ def evaluate_fairness(y_true, y_pred, A, sensitive_attribute, target):
         "false_omission_rate_uprivileged": metric.false_omission_rate(privileged=ug_value),        
         "error_rate_privileged": metric.error_rate(privileged=pg_value),
         "error_rate_unprivileged": metric.error_rate(privileged=ug_value)
-
-   
     }])
 
 # ===================== Run Experiment =====================

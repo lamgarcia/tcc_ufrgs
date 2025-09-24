@@ -25,11 +25,17 @@ model:
   - name: "gaussian_nb"
     params: {}
 
+  - name: "bernoulli_nb"
+    params:
+      alpha: 1.0          # Suavização de Laplace/Lidstone (quanto maior, mais suaviza). Default=1.0
+      binarize: 0.0       # Limite para transformar valores em binário (se None, não binariza).
+      fit_prior: True     # Se deve aprender as probabilidades a priori das classes.
+
   - name: "svm"
     params:
-     probability: true
-     kernel: "linear"
-     max_iter: 2000
+      probability: true
+      kernel: "linear"
+      max_iter: 2000
 
   - name: "random_florest"
     params: {}

@@ -27,8 +27,8 @@ def apply(model, X_train, y_train, A_train, params):
         constraint = EqualizedOdds()
     else:
         raise ValueError(f"Constraint {constraint_type} not supported.")
-        
-    # --- valida compatibilidade do modelo com o paramentor sample_weight ---
+    
+        # --- valida compatibilidade do modelo com o paramentor sample_weight ---
     if "sample_weight" not in inspect.signature(model.fit).parameters:
         # Wrapper simples que ignora sample_weight
         class Wrapper(model.__class__):
@@ -36,6 +36,7 @@ def apply(model, X_train, y_train, A_train, params):
                 return super().fit(X, y, **kwargs)
         model = Wrapper(**model.get_params())
 
+    
     # Cria mitigador usando o modelo original como estimador base
     mitigator = GridSearch(
         estimator=model,
