@@ -15,7 +15,7 @@ metrics = [
     #"recall",
     #"specificity",
     #"f1-score",
-    #"roc_auc"
+    #"roc_auc",
     "disparate_impact",
     "predictive_parity_ratio",
     "equal_opportunity_ratio"
@@ -26,12 +26,12 @@ metrics = [
 nonestring = 'X'
 method_map = {
     "none": nonestring,
-    "reweighing": "REW",
-    "grid_search": "GRIDS",
-    "disparate_impact_remover": "DISPIMP",
-    "exponentiated_gradient": "EXGRAD",
-    "equalized_odds_postprocessing": "EQODDS",
-    "reject_option_classification": "REJECTOPT",
+    "reweighing": "Rew",
+    "grid_search": "GridS",
+    "disparate_impact_remover": "DispImpRemov",
+    "exponentiated_gradient": "ExpGrad",
+    "equalized_odds_postprocessing": "EqOdds",
+    "reject_option_classification": "RejOptClas",
 }
 
 # Aplica substituição dos nomes longos para curtos
@@ -84,24 +84,43 @@ for model in models:
     df_ratio['order'] = df_ratio.apply(pipeline_order, axis=1)
     
     # Reorganiza dados para heatmap respeitando a ordem
-    heatmap_data = df_ratio.sort_values("order").set_index('pipeline')[metrics].T
+    #heatmap_data = df_ratio.sort_values("order").set_index('pipeline')[metrics].T
+    heatmap_data = df_ratio.sort_values("order").set_index('pipeline')[metrics]
+
     
     # === Plota heatmap ===
+    # === Plota heatmap ===
     plt.figure(figsize=(10, len(metrics)*0.6 + 2))
+
+    # Primeiro, plota sem annotation
     ax = sns.heatmap(
-        heatmap_data, annot=True, cmap="RdBu", center=0, fmt=".2%", cbar=True
+        heatmap_data, annot=False, cmap="RdBu", center=0, fmt=".2%", cbar=True
     )
-    
+
+    # Mostrar todos os labels de Y (pipelines)
+    ax.set_yticks(range(len(heatmap_data.index)))
+    ax.set_yticklabels(heatmap_data.index, rotation=0, fontsize=8)
+
     # Formata a barra de cores em porcentagem
     colorbar = ax.collections[0].colorbar
     colorbar.ax.yaxis.set_major_formatter(mtick.PercentFormatter(1.0))
-    
-    # Ajusta os rótulos do eixo X
-    ax.set_xticklabels(ax.get_xticklabels(), rotation=30, ha="right", fontsize=9)
-    
+
+    # Adiciona apenas os maiores valores de cada coluna
+    for j, col in enumerate(heatmap_data.columns):
+        col_values = heatmap_data[col]
+        max_row = col_values.idxmax()  # pipeline com maior valor
+        i = heatmap_data.index.get_loc(max_row)  # posição na linha
+        value = col_values[max_row]
+        ax.text(
+            j + 0.5, i + 0.5, f"{value:.2%}",
+            ha="center", va="center", color="black", fontsize=8, fontweight="bold"
+        )
+
+    # Ajusta rótulos do eixo X (métricas)
+    ax.set_xticklabels(ax.get_xticklabels(), rotation=0, ha="right", fontsize=8)
+
     plt.title(f"Δ relativo ao baseline (%) - Modelo: {model}")
-    plt.xlabel("Pipeline (pre-in-post)")
-    plt.ylabel("Métrica")
+    plt.xlabel("Métrica")
+    plt.ylabel("Pipeline (pre-in-post)")
     plt.tight_layout()
     plt.show()
-

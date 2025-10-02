@@ -22,9 +22,6 @@ model:
   - name: "decision_tree"
     params: {}
 
-  - name: "gaussian_nb"
-    params: {}
-
   - name: "bernoulli_nb"
     params:
       alpha: 1.0          # Suavização de Laplace/Lidstone (quanto maior, mais suaviza). Default=1.0
