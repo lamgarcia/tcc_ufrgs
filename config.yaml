@@ -14,10 +14,20 @@
   "params": {}
 "mitigation":
   "pre":
-    "name": "reweighing"
-    "params": {}
+    "name": "lfr"
+    "params": {
+      "k": 5,
+      "Ax": 0.01,   # reconstrucao X
+      "Ay": 5.0,    # preservar Y
+      "Az": 20.0,   # fairness
+      "print_interval": 250,
+      "maxiter": 5000,
+      "maxfun": 5000,
+      "threshold": 0.3,
+      "verbose": 1,
+      "seed": 42}
   "in":
-    "name": "grid_search"
+    "name": "none"
     "params": {}
   "post":
     "name": "none"

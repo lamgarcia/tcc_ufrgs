@@ -8,7 +8,6 @@ df = pd.read_csv(csv_path)
 
 
 metric = "precision"
-
 metric = "accuracy"
 metric = "disparate_impact"
 metric = "equalized_odds_difference"
