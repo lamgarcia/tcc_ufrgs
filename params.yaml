@@ -108,5 +108,4 @@ mitigation:
 
     - name: "deterministic_reranking"
       params:
-        rerank_type: Constrained
-	renormalize_scores: False
+        rerank_type: Greedy
