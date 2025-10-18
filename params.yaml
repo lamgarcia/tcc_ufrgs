@@ -75,17 +75,20 @@ mitigation:
       params: 
         repair_level: 1.0 # 1.0 =  total repair
 
+    - name: "optimized_preprocessing"
+      params: {}
+
     - name: "lfr"
-      params:
-        k: 5 # Number of prototypes.
-        Ax: 0.01  # Input recontruction quality term weight
-        Ay: 5.0 # Output prediction error
-        Az: 20.0      # Fairness constraint term weight
-        print_interval: 250
-        maxiter: 8000
-        maxfun: 8000
-        threshold: 0.4
-        verbose: 1
+      params: {}
+    #    k: 5 # Number of prototypes.
+    #    Ax: 0.01  # Input recontruction quality term weight
+    #    Ay: 5.0 # Output prediction error
+    #    Az: 20.0      # Fairness constraint term weight
+    #    print_interval: 250
+    #    maxiter: 8000
+    #    maxfun: 8000
+    #    threshold: 0.4
+    #    verbose: 1
 
   in:
     - name: "none"
@@ -103,8 +106,7 @@ mitigation:
 
     - name: "calibrated_odds_postprocessing"
       params:
-        cost_constraint: "weighted"
-        threshold: 0.5
+        cost_constraint: "fpr"# "fnr" "weighted"
 
     - name: "deterministic_reranking"
       params:
