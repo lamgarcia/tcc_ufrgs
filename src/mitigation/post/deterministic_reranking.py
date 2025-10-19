@@ -54,4 +54,16 @@ def apply(y_pred, y_proba, y_test, A_test, params):
     y_pred_transf[:n_rerank] = y_pred_rerank
     y_proba_transf[:n_rerank] = y_proba_rerank
 
+
+        # === Salva CSV com antes e depois ===
+    df_rerank = pd.DataFrame({
+        "y_test": y_test,
+        "A_test": A_test,
+        "y_pred_before": y_pred,
+        "score_before": y_proba,
+        "y_pred_rerank": y_pred_transf,
+        "score_rerank": y_proba_transf
+    })
+    df_rerank.to_csv("y_pred_reranking_full.csv", index=False)
+
     return y_pred_transf, y_proba_transf

@@ -68,7 +68,6 @@ def load_and_preprocess(dataset_cfg, path_dataset):
 
     # One-hot encoding 
     X = pd.get_dummies(X, drop_first=True)
-    #X_encoded = pd.get_dummies(X)
 
     X.columns = (
         X.columns.astype(str)
@@ -361,12 +360,22 @@ def run_experiment(config_path):
 
     X_train, X_test = X_train.align(X_test, join="left", axis=1, fill_value=0)
 
+    #df_train = pd.concat([X_train.reset_index(drop=True), 
+    #                  y_train.reset_index(drop=True), 
+    #                  A_train.reset_index(drop=True)], axis=1)
+    #df_train.to_csv('dftrain_antes_standard.csv', index=False)
+
     colunas = X_train.columns.tolist()  
     scaler = StandardScaler()
     X_train = scaler.fit_transform(X_train)
     X_test  = scaler.transform(X_test)
     X_train = pd.DataFrame(X_train, columns=colunas)
     X_test  = pd.DataFrame(X_test, columns=colunas)
+
+    #df_train = pd.concat([X_train.reset_index(drop=True), 
+    #                  y_train.reset_index(drop=True), 
+    #                  A_train.reset_index(drop=True)], axis=1)
+    #df_train.to_csv('dftrain_depois_standard.csv', index=False)
    
     # === Pre-processing mitigation ===
 

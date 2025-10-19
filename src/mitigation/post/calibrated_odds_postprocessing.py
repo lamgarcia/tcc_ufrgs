@@ -49,7 +49,7 @@ def apply(y_pred, y_proba, y_test, A_test, params):
     calib_eq_odds = calib_eq_odds.fit(dataset_true, dataset_pred)
 
     # Transforma as previsões (preserva calibração)
-    dataset_pred_transf = calib_eq_odds.predict(dataset_pred, threshold=params.get("threshold"))
+    dataset_pred_transf = calib_eq_odds.predict(dataset_pred)
 
     # Extrai previsões corrigidas
     y_pred_transf = dataset_pred_transf.labels.ravel()

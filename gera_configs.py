@@ -15,7 +15,7 @@ def represent_list(dumper, data):
 def gera_configs(params_path):
 
     # === Caminhos das pastas ===
-    OUTPUT_DIR = "configs_automaticas"
+    OUTPUT_DIR = "configs"
     os.makedirs(OUTPUT_DIR, exist_ok=True)
 
     # === Custom Dumper para forçar aspas em strings e listas inline ===
