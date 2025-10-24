@@ -15,6 +15,8 @@ from sklearn.metrics import (roc_auc_score, average_precision_score, matthews_co
 from aif360.datasets import BinaryLabelDataset
 from aif360.metrics import ClassificationMetric
 
+from fairlearn.metrics import equalized_odds_ratio, equal_opportunity_ratio, demographic_parity_ratio
+ 
 from sklearnex import patch_sklearn
 patch_sklearn()
 
@@ -252,12 +254,13 @@ def evaluate_fairness(y_true, y_pred, A, sensitive_attribute, target):
 
     tpr_priv = metric.recall(privileged=pg_value)
     tpr_unpriv = metric.recall(privileged=ug_value)
-    equal_opportunity_ratio = tpr_priv / tpr_unpriv if tpr_unpriv > 0 else None    #tpr_ratio
+    equalized_opportunity_ratio = tpr_priv / tpr_unpriv if tpr_unpriv > 0 else None    #tpr_ratio
 
     tnr_priv =  metric.specificity(privileged=pg_value)
     tnr_unpriv =  metric.specificity(privileged=ug_value)
     tnr_ratio = (tnr_priv / tnr_unpriv) if tnr_unpriv > 0 else None
 
+    equal_odds_ratio = (equalized_opportunity_ratio + fpr_ratio) / 2
 
     npv_priv = metric.negative_predictive_value(privileged=pg_value)
     npv_unpriv = metric.negative_predictive_value(privileged=ug_value)
@@ -265,14 +268,27 @@ def evaluate_fairness(y_true, y_pred, A, sensitive_attribute, target):
 
     ppv_priv = metric.positive_predictive_value(privileged=pg_value) # precision
     ppv_unpriv = metric.positive_predictive_value(privileged=ug_value)
-    predictive_parity_ratio = (ppv_priv / ppv_unpriv) if ppv_unpriv > 0 else None  #ppv_ratio
-    
+    #predictive_parity_ratio = ppv_priv / ppv_unpriv if ppv_unpriv > 0 else None
+    if ppv_priv == 0 or ppv_unpriv == 0:
+        predictive_parity_ratio = 0.0
+    else:
+        predictive_parity_ratio = min(ppv_priv / ppv_unpriv, ppv_unpriv / ppv_priv)
+
+    fairlearn_args = {
+        "y_true": y_true,
+        "y_pred": y_pred,
+        "sensitive_features": A,
+        "method": "between_groups"
+    }
+
+   
     return pd.DataFrame([{
         #ratios
 
-        "disparate_impact": metric.disparate_impact(),                                                      
-        "equal_opportunity_ratio": equal_opportunity_ratio,
-        "predictive_parity_ratio": predictive_parity_ratio,
+        "disparate_impact": demographic_parity_ratio(**fairlearn_args),       #metric.disparate_impact()
+        "equal_odds_ratio": equalized_odds_ratio(**fairlearn_args, agg='worst_case'),                                                   
+        "predictive_parity_ratio":  predictive_parity_ratio,
+        "equal_opportunity_ratio": equal_opportunity_ratio(**fairlearn_args),
         "tnr_ratio": tnr_ratio,
         "fpr_ratio": fpr_ratio,
         "npv_ratio": npv_ratio,
@@ -290,7 +306,6 @@ def evaluate_fairness(y_true, y_pred, A, sensitive_attribute, target):
         "equalized_odds_difference": metric.equalized_odds_difference(),
         "equal_opportunity_difference": metric.equal_opportunity_difference(),
         "error_rate_difference": metric.error_rate_difference(),
-        "generalized_equalized_odds_difference": metric.generalized_equalized_odds_difference(),
         "false_positive_rate_difference": metric.false_positive_rate_difference(),
         "false_discovery_rate_difference": metric.false_discovery_rate_difference(),
         "false_negative_rate_difference": metric.false_negative_rate_difference(),
