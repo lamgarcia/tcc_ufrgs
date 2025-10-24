@@ -9,15 +9,34 @@ def apply(y_pred, y_proba, y_test, A_test, params):
         "protected_bin": A_test,
         "score": y_proba          # probabilidade predita usada pelo CalibratedEqOdds
     })
-    
+
+    print(y_proba)
+
     #df = df.reset_index(drop=True)
 
     df_pred = df.copy()
     df_pred["label_bin"] = y_pred
     
-    print (df)
-    print(df_pred)
+    #print (df)
+    #print(df_pred)
+
+    import matplotlib.pyplot as plt
+
+    plt.hist(y_proba, bins=50)
+    plt.title("Distribuição de y_proba")
+    plt.show()
+
     
+    print("Distribuição geral:")
+    print(df["label_bin"].value_counts())
+    print(df["protected_bin"].value_counts())
+
+    print("\nCruzamento label x grupo protegido:")
+    print(pd.crosstab(df["label_bin"], df["protected_bin"]))
+
+    print("\nCruzamento previsões x grupo protegido:")
+    print(pd.crosstab(df_pred["label_bin"], df_pred["protected_bin"]))
+
     # Dataset verdadeiro (rótulos reais)
     dataset_true = BinaryLabelDataset(
         df=df,
