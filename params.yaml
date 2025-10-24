@@ -94,10 +94,10 @@ mitigation:
     - name: "none"
       params: {}
 
-    - name: "meta_fair_classification"
-      params: 
-         type: sr # fdr - false descovery rate e sr (statiscal rate ou disparate impact)
-         tau: 0.8 # 0 foca em acurácia, 1 foca em fairness
+    #- name: "meta_fair_classification"
+    #  params: 
+    #     type: sr # fdr - false descovery rate e sr (statiscal rate ou disparate impact)
+    #     tau: 1 # 0 foca em acurácia, 1 foca em fairness
 
   post:
     - name: "none"
@@ -109,10 +109,10 @@ mitigation:
     - name: "equalized_odds_postprocessing"
       params: {}
 
-    - name: "calibrated_odds_postprocessing"
-      params:
-        cost_constraint: "fpr"# "fnr" "weighted"
+    #- name: "calibrated_odds_postprocessing"
+    #  params:
+    #    cost_constraint: "weighted" #"fpr"# "fnr" "weighted"
 
-    - name: "deterministic_reranking"
-      params:
-        rerank_type: Greedy
+    #- name: "deterministic_reranking"
+    #  params:
+    #    rerank_type: Greedy

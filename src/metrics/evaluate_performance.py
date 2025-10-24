@@ -16,7 +16,7 @@ from sklearn.metrics import (
     confusion_matrix
 )
 
-def evaluate_performance2(y_true, y_pred, y_proba=None):
+def evaluate_performance(y_true, y_pred, y_proba=None):
 
     tn, fp, fn, tp = confusion_matrix(y_true, y_pred, labels=[0, 1]).ravel()
 
