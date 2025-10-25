@@ -174,8 +174,6 @@ def apply_mitigation_post(y_pred, y_proba, y_test, A_test, mitigation_cfg):
             raise ValueError(f"The module {module_path} must have a function 'apply(y_pred, y_proba, y_test, A_test, params)'")
     
 
-
-
 # ===================== Run Experiment =====================
 def run_experiment(config_path):
 
@@ -223,6 +221,10 @@ def run_experiment(config_path):
     df_train.to_csv('dftrain_depois_standard.csv', index=False)
    
     # === Pre-processing mitigation ===
+
+    #df_save = pd.concat([X_train, y_train, A_train], axis=1)
+    #df_save_file = str(config["model"])  + " "+str(config["mitigation"].get("pre",{}))
+    #df_save.to_csv(f'dfs\df_pre_save_{df_save_file}.csv', index=False)
 
     X_train, y_train, A_train, params_pre_mitigation = apply_mitigation_pre(X_train, y_train, A_train, config["mitigation"]["pre"])
 
