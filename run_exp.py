@@ -66,9 +66,6 @@ def load_and_preprocess(dataset_cfg, path_dataset):
     A = df[f"protected_bin"]
     X = df.drop([dataset_cfg["target"], f"label_bin", sensitive_col, f"protected_bin"], axis=1)
 
-    # One-hot encoding 
-    #X = pd.get_dummies(X, drop_first=True) GARCIA
-
     X.columns = (
         X.columns.astype(str)
         .str.replace("[", "(", regex=False)
@@ -81,7 +78,17 @@ def load_and_preprocess(dataset_cfg, path_dataset):
     X = X.reset_index(drop=True)
     y = y.reset_index(drop=True)
     A = A.reset_index(drop=True)
- 
+
+    # === One-Hot Encoding ===
+    cols_cat = ['workclass', 'education', 'marital-status', 'occupation',
+            'relationship', 'race', 'native-country']
+
+    X[cols_cat] = X[cols_cat].astype('category')
+    X = pd.get_dummies(X, drop_first=False)
+   
+    #transformar true/false em 1 e 0
+    X = X.astype(int)
+
     return X, y, A
 
 def _get_valid_fit_params(fit_method, params):
@@ -178,63 +185,48 @@ def apply_mitigation_post(y_pred, y_proba, y_test, A_test, mitigation_cfg):
 def run_experiment(config_path):
 
     start_time = time.time()
-
     config = load_config(config_path)
+
+    model_name      = config["model"]["name"]
+    method_pre_mitigation  = config["mitigation"]["pre"]["name"] 
+    method_in_mitigation   = config["mitigation"]["in"]["name"]
+    method_post_mitigation = config["mitigation"]["post"]["name"]
 
     # === Data Preprocess  ===
 
-    
-    # train and test
     X_train, y_train, A_train = load_and_preprocess(config["dataset"], config["dataset"]["path_train"])
     X_test, y_test, A_test    = load_and_preprocess(config["dataset"], config["dataset"]["path_test"])
-    X_train, X_test = X_train.align(X_test, join="left", axis=1, fill_value=0)
 
-    df_train = pd.concat([X_train.reset_index(drop=True),  y_train.reset_index(drop=True), A_train.reset_index(drop=True)], axis=1)
-    df_train.to_csv('dftrain_antes_standard.csv', index=False)
+    if list(X_train.columns) != list(X_test.columns):
+        print("As colunas são diferentes!")
+        print("Colunas X_train:", list(X_train.columns))
+        print("Colunas X_test:", list(X_test.columns))
+        X_train, X_test = X_train.align(X_test, join="left", axis=1, fill_value=0)
 
-    # === StandardScaler ===
-    #col_names = X_train.columns.tolist()  
-    #scaler = StandardScaler()
-    #X_train = scaler.fit_transform(X_train)
-    #X_test  = scaler.transform(X_test)
-    #X_train = pd.DataFrame(X_train, columns=col_names)
-    #X_test  = pd.DataFrame(X_test, columns=col_names)
-
-
-    # === One-Hot Encoding ===
-    cols_cat = ['workclass', 'education', 'marital-status', 'occupation',
-            'relationship', 'race', 'native-country']
-
-    X_train[cols_cat] = X_train[cols_cat].astype('category')
-    X_test[cols_cat]  = X_test[cols_cat].astype('category')
-
-    X_train = pd.get_dummies(X_train, drop_first=False)
-    X_test  = pd.get_dummies(X_test, drop_first=False)
-    # Garante que treino e teste tenham exatamente as mesmas colunas
-    X_train, X_test = X_train.align(X_test, join='left', axis=1, fill_value=0)
-    
-    #transformar true/false em 1 e 0
-    X_train = X_train.astype(int)
-    X_test  = X_test.astype(int)
-
-    df_train = pd.concat([X_train.reset_index(drop=True), y_train.reset_index(drop=True), A_train.reset_index(drop=True)], axis=1)
-    df_train.to_csv('dftrain_depois_standard.csv', index=False)
+    #df_train = pd.concat([X_train.reset_index(drop=True),  y_train.reset_index(drop=True), A_train.reset_index(drop=True)], axis=1)
+    #df_train = pd.concat([X_train,  y_train, A_train], axis=1)
+    #df_train.to_csv('dftrain_depois_preprocessamento_dataset.csv', index=False)
    
     # === Pre-processing mitigation ===
 
-    #df_save = pd.concat([X_train, y_train, A_train], axis=1)
-    #df_save_file = str(config["model"])  + " "+str(config["mitigation"].get("pre",{}))
-    #df_save.to_csv(f'dfs\df_pre_save_{df_save_file}.csv', index=False)
+    #DEBUG
+    df_train = pd.concat([X_train, y_train, A_train], axis=1)
+    file_name = f"{model_name}__pre-{method_pre_mitigation}__in-{method_in_mitigation}__post-{method_post_mitigation}"
+    df_train.to_csv(f"dfs/{file_name}_1_entrada_pre_mitigacao.csv", index=False)
 
     X_train, y_train, A_train, params_pre_mitigation = apply_mitigation_pre(X_train, y_train, A_train, config["mitigation"]["pre"])
 
     # === Model training  ===
     model = train_model(
-        config["model"]["name"].lower(), 
+        model_name.lower(), 
         X_train, y_train, 
         params_model=config["model"]["params"], 
         params_fit=params_pre_mitigation
     )
+
+    #DEBUG
+    df_train = pd.concat([X_train, y_train, A_train], axis=1)
+    df_train.to_csv(f"dfs/{file_name}_2_saida_pre_mitigacao.csv", index=False)
 
     # === In-processing mitigation ===
     model = apply_mitigation_in(
@@ -242,7 +234,6 @@ def run_experiment(config_path):
         X_train, y_train, A_train, 
         config["mitigation"]["in"]
     )
-
     # === Test ===
     y_pred  = model.predict(X_test)
 
@@ -254,9 +245,26 @@ def run_experiment(config_path):
         y_proba = y_pred.astype(float)  # transforma 0/1 em float # ruim para roc_auc e outras que usam proba, pq colocamos apenas o pred e não proba
         print(f"{model.__class__.__name__}: não tem predict_proba, usando pred como float")
     
-   
+     #DEBUG
+    df_train = pd.concat([
+        pd.Series(y_pred, name="y_pred"),
+        pd.Series(y_proba, name="y_proba"),
+        pd.Series(y_test, name="y_test"),
+        pd.Series(A_test, name="A_test")
+    ], axis=1)
+    df_train.to_csv(f"dfs/{file_name}_3_entrada_post_mitigacao.csv", index=False)
+
     # === Post-processing mitigation ===
     y_pred, y_proba = apply_mitigation_post(y_pred, y_proba, y_test, A_test, config["mitigation"]["post"])
+
+     #DEBUG
+    df_train = pd.concat([
+        pd.Series(y_pred, name="y_pred"),
+        pd.Series(y_proba, name="y_proba"),
+        pd.Series(y_test, name="y_test"),
+        pd.Series(A_test, name="A_test")
+    ], axis=1)
+    df_train.to_csv(f"dfs/{file_name}_4_saida_post_mitigacao.csv", index=False)
 
     # === Info Model e Mitigation  ===
     model_info = pd.DataFrame([{
@@ -267,9 +275,9 @@ def run_experiment(config_path):
     }])
 
     mitigation_info = pd.DataFrame([{
-        "pre":  config["mitigation"]["pre"]["name"],
-        "in":   config["mitigation"]["in"]["name"],
-        "post": config["mitigation"]["post"]["name"]
+        "pre":  method_pre_mitigation,
+        "in":   method_in_mitigation,
+        "post": method_post_mitigation
     }])
 
     # === Performance Metrics ===

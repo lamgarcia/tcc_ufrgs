@@ -34,7 +34,7 @@ model:
       kernel: "linear"
       max_iter: 2000
 
-  - name: "random_florest"
+  - name: "random_forest"
     params: {}
 
   - name: "logistic_regression"
