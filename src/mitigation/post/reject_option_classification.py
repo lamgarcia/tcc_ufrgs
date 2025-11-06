@@ -1,76 +1,76 @@
-def apply(y_pred, y_proba, y_test, A_test, params):
-    """
-    Aplica RejectOptionClassification nos resultados preditos.
-
-    y_pred : array-like
-        Previsões binárias originais do modelo.
-    y_proba : array-like
-        Probabilidades preditas pelo modelo.
-    y_test : array-like
-        Rótulos verdadeiros do conjunto de teste.
-    A_test : array-like
-        Atributo protegido (binário) do conjunto de teste.
-    params : dict
-        Parâmetros da técnica (ex: seed, grupos privilegiados e desprivilegiados).
-    """
-
+def apply(
+    X_val, y_val, A_val, y_val_pred, y_val_proba,
+    X_test, y_test, A_test, y_test_pred, y_test_proba,
+    params
+):
     import pandas as pd
-    import numpy as np
     from aif360.datasets import BinaryLabelDataset
     from aif360.algorithms.postprocessing import RejectOptionClassification
 
-    # Default dos grupos (pode sobrescrever via params)
-    unprivileged_groups = params.get("unprivileged_groups", [{'protected_bin': 0}])
-    privileged_groups   = params.get("privileged_groups", [{'protected_bin': 1}])
-
-    # Monta DataFrame para AIF360
-    df = pd.DataFrame({
-        "label_bin": y_test,
-        "score": y_proba,       # ROC usa score (probabilidade)
-        "protected_bin": A_test
+    # ===============================
+    # 1️⃣ Cria datasets BinaryLabelDataset de VALIDAÇÃO
+    # ===============================
+    df_val = pd.DataFrame({
+        "label_bin": y_val,
+        "protected_bin": A_val,
+        "pred": y_val_pred
     })
 
-    # Dataset verdadeiro
-    dataset_true = BinaryLabelDataset(
-        df=df,
+    val_true = BinaryLabelDataset(
+        df=df_val,
         label_names=["label_bin"],
         protected_attribute_names=["protected_bin"],
         favorable_label=1,
         unfavorable_label=0
     )
 
-    # Dataset predito (com score)
-    df_pred = df.copy()
-    df_pred["label_bin"] = y_pred
-    dataset_pred = BinaryLabelDataset(
-        df=df_pred,
+    val_pred = BinaryLabelDataset(
+        df=df_val.assign(label_bin=y_val_pred),
         label_names=["label_bin"],
         protected_attribute_names=["protected_bin"],
         favorable_label=1,
-        unfavorable_label=0,
+        unfavorable_label=0
     )
 
-    dataset_pred.scores = np.array(y_proba).reshape(-1, 1)
+    # ===============================
+    # 2️⃣ Cria datasets BinaryLabelDataset de TESTE
+    # ===============================
+    df_test = pd.DataFrame({
+        "label_bin": y_test,
+        "protected_bin": A_test,
+        "pred": y_test_pred
+    })
 
+    test_pred = BinaryLabelDataset(
+        df=df_test.assign(label_bin=y_test_pred),
+        label_names=["label_bin"],
+        protected_attribute_names=["protected_bin"],
+        favorable_label=1,
+        unfavorable_label=0
+    )
 
-    # Instancia Reject Option Classification
+    # ===============================
+    # 3️⃣ Ajusta Reject Option Classification no conjunto de validação
+    # ===============================
     roc = RejectOptionClassification(
-        unprivileged_groups=unprivileged_groups,
-        privileged_groups=privileged_groups,
-        metric_name=params.get("metric_name", "Statistical parity difference"),
-        metric_ub=params.get("metric_ub", 0.05),
-        metric_lb=params.get("metric_lb", -0.05)        
-        )
+        unprivileged_groups=[{'protected_bin': 0}],
+        privileged_groups=[{'protected_bin': 1}],
+        **params  # aceita parâmetros extras, ex: threshold, margin, etc.
+    )
 
-    roc = roc.fit(dataset_true, dataset_pred)
+    roc = roc.fit(val_true, val_pred)
 
-    # Transforma as previsões
-    dataset_pred_transf = roc.predict(dataset_pred)
+    # ===============================
+    # 4️⃣ Aplica o pós-processamento ao conjunto de teste
+    # ===============================
+    test_roc = roc.predict(test_pred)
 
-    # Extrai previsões corrigidas
-    y_pred_transf = dataset_pred_transf.labels.ravel()
+    # ===============================
+    # 5️⃣ Extrai as predições ajustadas
+    # ===============================
+    y_test_pred_roc = test_roc.labels.ravel()
 
-    print(y_pred_transf)
-    print(y_proba)
+    # ROC também não altera probabilidades — mantém as originais
+    y_test_proba_roc = y_test_proba
 
-    return y_pred_transf, y_proba
+    return y_test_pred_roc, y_test_proba_roc
