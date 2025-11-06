@@ -37,7 +37,17 @@ def load_and_preprocess(dataset_cfg, path_dataset):
     #df.replace([np.inf, -np.inf], np.nan, inplace=True)
     df.replace([float('inf'), float('-inf')], float('nan'), inplace=True)
     df.dropna(inplace=True)
-    
+
+    # remove colunas indicadas em 'cols_exclude' (se existirem) ===
+    cols_exclude = dataset_cfg.get("cols_exclude", [])
+    if cols_exclude:
+        # Garante que as colunas realmente existem antes de tentar remover
+        cols_present = [c for c in cols_exclude if c in df.columns]
+        if cols_present:
+            df.drop(columns=cols_present, inplace=True)
+        else:
+            print(f"Aviso: Nenhuma das colunas em {cols_exclude} foi encontrada no dataset.")
+
     # Filtra apenas categorias privilegiadas e não privilegiadas
     sensitive_col = dataset_cfg["sensitive"]
     privileged    = dataset_cfg["privileged"]
@@ -66,6 +76,8 @@ def load_and_preprocess(dataset_cfg, path_dataset):
     A = df[f"protected_bin"]
     X = df.drop([dataset_cfg["target"], f"label_bin", sensitive_col, f"protected_bin"], axis=1)
 
+
+    # Retirando caracteres inválidos dos nomes das colunas
     X.columns = (
         X.columns.astype(str)
         .str.replace("[", "(", regex=False)
@@ -80,14 +92,21 @@ def load_and_preprocess(dataset_cfg, path_dataset):
     A = A.reset_index(drop=True)
 
     # === One-Hot Encoding ===
-    cols_cat = ['workclass', 'education', 'marital-status', 'occupation',
-            'relationship', 'race', 'native-country']
+    cols_cat = dataset_cfg.get("cols_cat", [])
+    
+    cols_cat_present = [c for c in cols_cat if c in X.columns]
 
-    X[cols_cat] = X[cols_cat].astype('category')
-    X = pd.get_dummies(X, drop_first=False)
+    if cols_cat_present:
+        X[cols_cat_present] = X[cols_cat_present].astype('category')
+        X = pd.get_dummies(X, columns=cols_cat_present, drop_first=False)
+    else:
+        print(f"Nenhuma das colunas categóricas {cols_cat} foi encontrada em X.")
+
+    print(f"Shape final de X após one-hot: {X.shape}")
+    print(f"Tipos finais:\n{X.dtypes.value_counts()}")
    
     #transformar true/false em 1 e 0
-    X = X.astype(int)
+    #X[cols_cat_present] = X[cols_cat_present].astype(int)
 
     return X, y, A
 
@@ -167,18 +186,18 @@ def apply_mitigation_in(model, X_train, y_train, A_train, mitigation_cfg):
     except AttributeError:
             raise ValueError(f"The module {module_path} must have a function 'apply(model, X_train, y_train, A_train, params)'")
 
-def apply_mitigation_post(y_pred, y_proba, y_test, A_test, mitigation_cfg):
+def apply_mitigation_post(X_val, y_val, A_val, y_val_pred, y_val_proba, X_test, y_test, A_test, y_test_pred, y_test_proba, mitigation_cfg):
 
     if mitigation_cfg["name"].lower() == "none":
-        return y_pred, y_proba
+        return y_test_pred, y_test_proba
     try:
         module_path = f"src.mitigation.post.{mitigation_cfg['name'].lower()}"
         mitigation_module = importlib.import_module(module_path)
-        return mitigation_module.apply(y_pred, y_proba, y_test, A_test, mitigation_cfg.get("params", {}))
+        return mitigation_module.apply(X_val, y_val, A_val, y_val_pred, y_val_proba, X_test, y_test, A_test, y_test_pred, y_test_proba, mitigation_cfg.get("params", {}))
     except ModuleNotFoundError:
             raise ValueError(f"Mitigation method '{mitigation_cfg['name']}' not found in '{module_path}'")
     except AttributeError:
-            raise ValueError(f"The module {module_path} must have a function 'apply(y_pred, y_proba, y_test, A_test, params)'")
+            raise ValueError(f"The module {module_path} must have a function 'apply(X_val, y_val, A_val, y_val_pred, y_val_proba, X_test, y_test, A_test, y_test_pred, y_test_proba, params)'")
     
 
 # ===================== Run Experiment =====================
@@ -195,13 +214,13 @@ def run_experiment(config_path):
     # === Data Preprocess  ===
 
     X_train, y_train, A_train = load_and_preprocess(config["dataset"], config["dataset"]["path_train"])
+    X_val, y_val, A_val      = load_and_preprocess(config["dataset"], config["dataset"]["path_val"])
     X_test, y_test, A_test    = load_and_preprocess(config["dataset"], config["dataset"]["path_test"])
 
-    if list(X_train.columns) != list(X_test.columns):
-        print("As colunas são diferentes!")
-        print("Colunas X_train:", list(X_train.columns))
-        print("Colunas X_test:", list(X_test.columns))
+    # Preenche com zeros se houver colunas faltantes depois do pre-processamento
+    if (list(X_train.columns) != list(X_test.columns)) or (list(X_train.columns) != list(X_val.columns)):
         X_train, X_test = X_train.align(X_test, join="left", axis=1, fill_value=0)
+        X_train, X_val = X_train.align(X_val, join="left", axis=1, fill_value=0)      
 
     #df_train = pd.concat([X_train.reset_index(drop=True),  y_train.reset_index(drop=True), A_train.reset_index(drop=True)], axis=1)
     #df_train = pd.concat([X_train,  y_train, A_train], axis=1)
@@ -212,7 +231,7 @@ def run_experiment(config_path):
     #DEBUG
     df_train = pd.concat([X_train, y_train, A_train], axis=1)
     file_name = f"{model_name}__pre-{method_pre_mitigation}__in-{method_in_mitigation}__post-{method_post_mitigation}"
-    df_train.to_csv(f"dfs/{file_name}_1_entrada_pre_mitigacao.csv", index=False)
+    df_train.to_csv(f"dfs/{file_name}_1_entrada_pre_mitigacao_TRAIN.csv", index=False)
 
     X_train, y_train, A_train, params_pre_mitigation = apply_mitigation_pre(X_train, y_train, A_train, config["mitigation"]["pre"])
 
@@ -234,33 +253,37 @@ def run_experiment(config_path):
         X_train, y_train, A_train, 
         config["mitigation"]["in"]
     )
+    
     # === Test ===
-    y_pred  = model.predict(X_test)
+    y_val_pred  = model.predict(X_val)
+    y_test_pred  = model.predict(X_test)
 
+    # Verifica quais modelos retornam probabilidades
     if hasattr(model, "predict_proba"):
-        y_proba = model.predict_proba(X_test)[:, 1]
+        y_val_proba = model.predict_proba(X_val)[:, 1]
+        y_test_proba = model.predict_proba(X_test)[:, 1]
         print(f"{model.__class__.__name__}: sim, tem predict_proba")
-
     else:
-        y_proba = y_pred.astype(float)  # transforma 0/1 em float # ruim para roc_auc e outras que usam proba, pq colocamos apenas o pred e não proba
+        y_val_proba = y_test_pred.astype(float)
+        y_test_proba = y_test_pred.astype(float)  # transforma 0/1 em float # ruim para roc_auc e outras que usam proba, pq colocamos apenas o pred e não proba
         print(f"{model.__class__.__name__}: não tem predict_proba, usando pred como float")
     
      #DEBUG
     df_train = pd.concat([
-        pd.Series(y_pred, name="y_pred"),
-        pd.Series(y_proba, name="y_proba"),
+        pd.Series(y_test_pred, name="y_test_pred"),
+        pd.Series(y_test_proba, name="y_test_proba"),
         pd.Series(y_test, name="y_test"),
         pd.Series(A_test, name="A_test")
     ], axis=1)
     df_train.to_csv(f"dfs/{file_name}_3_entrada_post_mitigacao.csv", index=False)
 
     # === Post-processing mitigation ===
-    y_pred, y_proba = apply_mitigation_post(y_pred, y_proba, y_test, A_test, config["mitigation"]["post"])
+    y_test_pred, y_test_proba = apply_mitigation_post(X_val, y_val, A_val, y_val_pred, y_val_proba, X_test, y_test, A_test, y_test_pred, y_test_proba, config["mitigation"]["post"])
 
      #DEBUG
     df_train = pd.concat([
-        pd.Series(y_pred, name="y_pred"),
-        pd.Series(y_proba, name="y_proba"),
+        pd.Series(y_test_pred, name="y_test_pred"),
+        pd.Series(y_test_proba, name="y_test_proba"),
         pd.Series(y_test, name="y_test"),
         pd.Series(A_test, name="A_test")
     ], axis=1)
@@ -281,12 +304,12 @@ def run_experiment(config_path):
     }])
 
     # === Performance Metrics ===
-    performance_metrics = evaluate_performance(y_test, y_pred, y_proba)
+    performance_metrics = evaluate_performance(y_test, y_test_pred, y_test_proba)
 
     # === Fairness Metrics ===
 
     fairness_metrics = evaluate_fairness(
-        y_test, y_pred, A_test,
+        y_test, y_test_pred, A_test,
         sensitive_attribute=config["dataset"]["sensitive"],
         target=config["dataset"]["target"]
     )
