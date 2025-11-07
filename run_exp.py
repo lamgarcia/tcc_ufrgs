@@ -98,15 +98,15 @@ def load_and_preprocess(dataset_cfg, path_dataset):
 
     if cols_cat_present:
         X[cols_cat_present] = X[cols_cat_present].astype('category')
-        X = pd.get_dummies(X, columns=cols_cat_present, drop_first=False)
+        X = pd.get_dummies(X, columns=cols_cat_present, dtype=int, drop_first=False)
     else:
         print(f"Nenhuma das colunas categóricas {cols_cat} foi encontrada em X.")
 
     print(f"Shape final de X após one-hot: {X.shape}")
     print(f"Tipos finais:\n{X.dtypes.value_counts()}")
    
-    #transformar true/false em 1 e 0
-    #X[cols_cat_present] = X[cols_cat_present].astype(int)
+    #transformar true/false  em 1 e 0
+    #X = X.astype(int)
 
     return X, y, A
 
@@ -198,7 +198,27 @@ def apply_mitigation_post(X_val, y_val, A_val, y_val_pred, y_val_proba, X_test, 
             raise ValueError(f"Mitigation method '{mitigation_cfg['name']}' not found in '{module_path}'")
     except AttributeError:
             raise ValueError(f"The module {module_path} must have a function 'apply(X_val, y_val, A_val, y_val_pred, y_val_proba, X_test, y_test, A_test, y_test_pred, y_test_proba, params)'")
-    
+
+
+def debug_fairness(y_true, y_pred, y_proba, A, privileged_value=1, positive_label=1):
+    import numpy as np
+    df = pd.DataFrame({
+        "y_true": y_true,
+        "y_pred": y_pred,
+        "y_proba": y_proba if y_proba is not None else np.nan,
+        "A": A
+    })
+    overall_pos_rate = (df["y_pred"] == positive_label).mean()
+    print("Overall positive rate (predict):", overall_pos_rate)
+    print("Unique predictions:", np.unique(y_pred))
+    if y_proba is not None:
+        print("y_proba: min, q25, median, q75, max =", np.nanmin(df["y_proba"]), 
+              df["y_proba"].quantile(0.25), df["y_proba"].median(), 
+              df["y_proba"].quantile(0.75), np.nanmax(df["y_proba"]))
+
+    for grp, gdf in df.groupby("A"):
+        pos_rate = (gdf["y_pred"] == positive_label).mean()
+        print(f"Group A={grp}: n={len(gdf)}, pos_rate={pos_rate}, pos_count={(gdf['y_pred']==positive_label).sum()}")
 
 # ===================== Run Experiment =====================
 def run_experiment(config_path):
@@ -222,9 +242,9 @@ def run_experiment(config_path):
         X_train, X_test = X_train.align(X_test, join="left", axis=1, fill_value=0)
         X_train, X_val = X_train.align(X_val, join="left", axis=1, fill_value=0)      
 
-    #df_train = pd.concat([X_train.reset_index(drop=True),  y_train.reset_index(drop=True), A_train.reset_index(drop=True)], axis=1)
-    #df_train = pd.concat([X_train,  y_train, A_train], axis=1)
-    #df_train.to_csv('dftrain_depois_preprocessamento_dataset.csv', index=False)
+    df_train = pd.concat([X_train.reset_index(drop=True),  y_train.reset_index(drop=True), A_train.reset_index(drop=True)], axis=1)
+    df_train = pd.concat([X_train,  y_train, A_train], axis=1)
+    df_train.to_csv('dftrain_depois_preprocessamento_dataset.csv', index=False)
    
     # === Pre-processing mitigation ===
 
@@ -263,11 +283,14 @@ def run_experiment(config_path):
         y_val_proba = model.predict_proba(X_val)[:, 1]
         y_test_proba = model.predict_proba(X_test)[:, 1]
         print(f"{model.__class__.__name__}: sim, tem predict_proba")
+        
     else:
         y_val_proba = y_test_pred.astype(float)
         y_test_proba = y_test_pred.astype(float)  # transforma 0/1 em float # ruim para roc_auc e outras que usam proba, pq colocamos apenas o pred e não proba
         print(f"{model.__class__.__name__}: não tem predict_proba, usando pred como float")
     
+    debug_fairness(y_test, y_test_pred, y_test_proba, A_test, privileged_value=1, positive_label=1)
+
      #DEBUG
     df_train = pd.concat([
         pd.Series(y_test_pred, name="y_test_pred"),
