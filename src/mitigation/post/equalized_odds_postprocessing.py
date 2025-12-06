@@ -7,6 +7,10 @@ def apply(
     from aif360.datasets import BinaryLabelDataset
     from aif360.algorithms.postprocessing import EqOddsPostprocessing
 
+    # Utiliza
+    # y_val, A_val, y_val_pred,
+    # A_test, y_test_pred
+
     # ===============================
     # 1Cria datasets BinaryLabelDataset de VALIDAÇÃO
     # ===============================
@@ -36,7 +40,7 @@ def apply(
     # Cria datasets BinaryLabelDataset de TESTE
     # ===============================
     df_test = pd.DataFrame({
-        "label_bin": y_test,
+        "label_bin": y_test,                          #esse aqui não utiliza! retirar e testar
         "protected_bin": A_test,
         "pred": y_test_pred
     })
