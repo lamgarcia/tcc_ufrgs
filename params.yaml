@@ -2,7 +2,10 @@ dataset:
   name: "adult"
   path: "datasets/adult_sklearn/adult_sklearn.csv"
   path_train: "datasets/adult_sklearn/adult_sklearn_train.csv"
+  path_val: "datasets/adult_sklearn/adult_sklearn_val.csv"
   path_test: "datasets/adult_sklearn/adult_sklearn_test.csv"
+  cols_exclude: ["fnlwgt"]
+  cols_cat: ["workclass","education","marital-status","occupation","relationship","race","native-country"] # colonas categoricas que serão transformada para one-hot 0/1
   target: "income"
   sensitive: "sex"
   privileged: ["Male"]        #1
@@ -29,10 +32,7 @@ model:
       fit_prior: True     # Se deve aprender as probabilidades a priori das classes.
 
   - name: "svm"
-    params:
-      probability: true
-      kernel: "linear"
-      max_iter: 2000
+    params: {}
 
   - name: "random_forest"
     params: {}
@@ -54,14 +54,14 @@ model:
       validation_fraction: 0.1
       n_iter_no_change: 10
 
-  - name: "knn"
-    params:
-      n_neighbors: 3
-      weights: "distance"
-      algorithm: "auto"
-      leaf_size: 30
-      p: 2
-      metric: "minkowski"
+  #- name: "knn"
+  #  params:
+  #    n_neighbors: 3
+  #    weights: "distance"
+  #    algorithm: "auto"
+  #    leaf_size: 30
+  #    p: 2
+  #    metric: "minkowski"
 
 mitigation:
   pre:
@@ -111,7 +111,7 @@ mitigation:
 
     #- name: "calibrated_odds_postprocessing"
     #  params:
-    #    cost_constraint: "weighted" #"fpr"# "fnr" "weighted"
+    #     cost_constraint: "weighted" #"fpr"#"fnr"
 
     #- name: "deterministic_reranking"
     #  params:
