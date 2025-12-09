@@ -263,6 +263,10 @@ def run_experiment(config_path):
         params_fit=params_pre_mitigation
     )
 
+    print(type(model))
+    print(model.get_params())
+
+
     #DEBUG
     df_train = pd.concat([X_train, y_train, A_train], axis=1)
     df_train.to_csv(f"dfs/{file_name}_2_saida_pre_mitigacao.csv", index=False)
