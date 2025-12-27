@@ -6,6 +6,7 @@ from fairlearn.metrics import equalized_odds_ratio, equal_opportunity_ratio, dem
 
 def evaluate_fairness(y_true, y_pred, A, sensitive_attribute, target):
 
+    # Monta o dataset true com o y_true, com o target e sensitive atribute.
     dataset_true = BinaryLabelDataset(
         df=pd.DataFrame({target: y_true, sensitive_attribute: A}),
         label_names=[target],
@@ -14,29 +15,28 @@ def evaluate_fairness(y_true, y_pred, A, sensitive_attribute, target):
         unfavorable_label=0
     )
 
-    #dataset_pred = dataset_true.copy()
-    #dataset_pred.labels = y_pred
+    # Faz uma cópia para montar o dataset de predição e altera a predição o y para  ypred
     dataset_pred = dataset_true.copy()
     dataset_pred.labels = pd.DataFrame(y_pred).astype(float).values
 
-
-    #print ("------------------------------DATASET TRUE --------------------------")
-    #print("Features:", dataset_true.features)   # colunas consideradas como features
-    #print("Labels:", dataset_true.labels)       # array de labels
-    #print("Protected attributes:", dataset_true.protected_attributes)  # atributo protegido
-    #print("Feature names:", dataset_true.feature_names)             # features
-    #print("Label name:", dataset_true.label_names)                  # target
-    #print("Protected attribute names:", dataset_true.protected_attribute_names)  # sensível
+    '''
+    print ("------------------------------DATASET TRUE --------------------------")
+    print("Features:", dataset_true.features)   # colunas consideradas como features
+    print("Labels:", dataset_true.labels)       # array de labels
+    print("Protected attributes:", dataset_true.protected_attributes)  # atributo protegido
+    print("Feature names:", dataset_true.feature_names)             # features
+    print("Label name:", dataset_true.label_names)                  # target
+    print("Protected attribute names:", dataset_true.protected_attribute_names)  # sensível
 
     
-    #print ("------------------------------DATASET PRED --------------------------")
-    #print("Features:", dataset_pred.features)   # colunas consideradas como features
-    #print("Labels:", dataset_pred.labels)       # array de labels
-    #print("Protected attributes:", dataset_pred.protected_attributes)  # atributo protegido
-    #print("Feature names:", dataset_pred.feature_names)             # features
-    #print("Label name:", dataset_pred.label_names)                  # target
-    #print("Protected attribute names:", dataset_pred.protected_attribute_names)  # sensível
-
+    print ("------------------------------DATASET PRED --------------------------")
+    print("Features:", dataset_pred.features)   # colunas consideradas como features
+    print("Labels:", dataset_pred.labels)       # array de labels
+    print("Protected attributes:", dataset_pred.protected_attributes)  # atributo protegido
+    print("Feature names:", dataset_pred.feature_names)             # features
+    print("Label name:", dataset_pred.label_names)                  # target
+    print("Protected attribute names:", dataset_pred.protected_attribute_names)  # sensível
+    '''
 
     # https://aif360.readthedocs.io/en/latest/modules/generated/aif360.metrics.ClassificationMetric.html
     metric = ClassificationMetric(

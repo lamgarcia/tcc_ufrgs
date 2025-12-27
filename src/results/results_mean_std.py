@@ -1,7 +1,8 @@
 import pandas as pd
 
 # === 1. Ler CSV ===
-df = pd.read_csv("runs_adult_30x_3.csv")
+filename = "runs_adult_3x_2"
+df = pd.read_csv(filename+".csv")
 
 # === 2. Chave única de agrupamento ===
 group_keys = ["model", "pre", "in", "post"]
@@ -56,6 +57,6 @@ final_cols = group_keys + metric_pairs
 grouped = grouped[final_cols]
 
 # === 10. Salvar CSV final ===
-grouped.to_csv("runs_adult_30x_teste_mean_std.csv", index=False)
+grouped.to_csv(filename+"_mean_std.csv", index=False)
 
 print("Arquivo gerado com sucesso!")

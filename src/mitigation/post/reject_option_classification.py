@@ -31,6 +31,8 @@ def apply(
         favorable_label=1,
         unfavorable_label=0
     )
+    # PARA CORREÇÃO 
+    val_pred.scores = y_val_proba.reshape(-1, 1)
 
     # ===============================
     # 2️⃣ Cria datasets BinaryLabelDataset de TESTE
@@ -49,6 +51,9 @@ def apply(
         unfavorable_label=0
     )
 
+    # PARA CORREÇÃO 
+    test_pred.scores = y_test_proba.reshape(-1, 1)
+    
     # ===============================
     # 3️⃣ Ajusta Reject Option Classification no conjunto de validação
     # ===============================
