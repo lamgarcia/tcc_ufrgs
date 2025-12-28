@@ -1,7 +1,7 @@
 import pandas as pd
 
 # === 1. Ler CSV ===
-filename = "runs_adult_3x_2"
+filename = "runs_adult_10x_1"
 df = pd.read_csv(filename+".csv")
 
 # === 2. Chave única de agrupamento ===

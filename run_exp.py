@@ -334,12 +334,12 @@ def run_experiment(config_path):
     performance_metrics = evaluate_performance(y_test, y_test_pred, y_test_proba)
 
     # === Fairness Metrics ===
-
     fairness_metrics = evaluate_fairness(
         y_test, y_test_pred, A_test,
         sensitive_attribute=config["dataset"]["sensitive"],
         target=config["dataset"]["target"]
     )
+
 
     results = pd.concat([model_info, mitigation_info, performance_metrics, fairness_metrics], axis=1)
 
