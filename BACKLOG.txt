@@ -1,54 +1,44 @@
-- Verificar se os resultados do pré e pós, principalmente os que utilizam pesos, podem ser aplicados a todos modelos.
 
-- BUSCAR NA LITERATURA MELHORES PARAMETROS DOS MODELOS , JÁ UTILIZADO EM ARTIGOS.
-Esses vão para o config models
-
-- no codigo e config faz referencia a sensitive e target, mas na maioria das tecnicas chama de protected ou privileged.
-  Unificar os conceitos no codigo.
-
-
-sempre usar
-0 unprivileged
-1 privileged
-
-0 unfavorable label
-1 favorable label
-
-- (OK) colocar parametros do preprocessing, IN E POS, E TAMBÉM DOS MODELOS no yalm
- PARA ISSO CRIAR UM OUTROS ARQUIVOS DE PARAMETROS PARA CADA MODELO PARA SER LIDO NO GERA_CONFIGS.PY
+INSERIR EM MÉTRICAS AQUELAS QUE NÃO ESTÃO LISTADAS NOS RESULTADOS, complementar
+SE DER TEMPO, FAZER OS MODELOS FICARAM EM ORDEM DO MAPEAMENTO NO TRADEOFF
+- EU ESTOU FAZENDO AS DIFERENÇAS NO TRADEOFF DO BASELINE PARA A METRICA MELHOR PARA O GRUPO FEMININO
+NO TENTANDO O MELHOR PODERIA SER 0, QUE, EM AVERAGE ODDS DIFFERENCE ESTÁ SENDO CONQUISTADO.
+- colocar as métricas utilizadas na planilha de métricas do inicio de experimentos
+-------------------
+\begin{comment}
+Todos as classes aceitam sample_weight, PARA JUSTIFICAR REW
 
 
-ROBUSTES
-- Comparar os datasets e transformações para garantir robustes.
-- (OK) PASSAR COMO PARAMETRO O ARQUIVO DE CONFIGURAÇÃO, 
-  ASSIM DÁ PARA DEIXAR VÁRIOS ARQUIVOS PRONTOS EM UMA PASTA E UM OUTRO PYTHON RODA TODOS.
-- (OK) UTILIZAR AS VARIÁVEIS DO ARTIGO Y, Y_HAT, A, ...
+LogisticRegression -  fit(X, y, sample_weight=None)
+	sample_weightarray-like of shape (n_samples,) default=None
+	Array of weights that are assigned to individual samples. If not provided, then each sample is given unit weight.
 
-DATASET
-- (OK) Baixar do UCI ou outro de melhor qualidade, já que nos comentários está como ruim (utilizei do scikit)
-- (OK) Realziar as análises do dataset melhor (utilizei seetviz)
-- (OK)Criar um src\dataset\ para o preprocessamento personalizado dos datasets
+MLPClassifier - fit(X, y, sample_weight=None)
+	sample_weightarray-like of shape (n_samples,), default=None
+	Sample weights.
 
-BASELINE
+LinearSVC - fit(X, y, sample_weight=None)
+	sample_weightarray-like of shape (n_samples,), default=None
+	Array of weights that are assigned to individual samples. If not provided, then each sample is given unit weight
 
-MODELO
+DecisionTreeClassifier - fit(X, y, sample_weight=None, check_input=True)
+	sample_weight
+	array-like of shape (n_samples,), default=None
+	Sample weights. If None, then samples are equally weighted. Splits that would create child nodes with net zero or 	negative weight are ignored while searching for a split in each node. Splits are also ignored if they would result 	in any single class carrying a negative weight in either child node.
 
-- Fiz uma alteração no seed de 42 para 0 e mudou BASTANTE as fairness matric. Estudar porque ocorre isso.
- E se não tenho que fazer uma média com vários seeds randomicos.
+RandomForestClassifier - fit(X, y, sample_weight=None)
 
-- (OK) parametros do premitigation passar para o modelo de forma genérica, hoje tá sample_weight
+	sample_weight
+	array-like of shape (n_samples,), default=None
+	Sample weights. If None, then samples are equally weighted. Splits that would create child nodes with net zero or 	negative weight are ignored while searching for a split in each node. In the case of classification, splits are 	also ignored if they would result in any single class carrying a negative weight in either child node.
 
-MITIGATION
+XGBClassifier
+	fit(X, y, *, sample_weight=None, base_margin=None, eval_set=None, verbose=True, xgb_model=None, 	sample_weight_eval_set=None, base_margin_eval_set=None, feature_weights=None
+        sample_weight (Any | None) – instance weights
 
-- (OK) É provavel que eu tenha que incluir a biblioteca (aif360, infairnes..) do in-processing no config, para diferenciar. 
+BernoulliNB - fit(X, y, sample_weight=None)
+	sample_weight
+	array-like of shape (n_samples,), default=None
+	Weights applied to individual samples (1. for unweighted).
 
-METRICS FAIRNESS
-- Utilizar ratios, pois é normalizado. Melhor para comparar nos gráficos.
-
-GRAFICOS
-- (ok) Criar graficos para análise
-
-LOGS
-- Salvar o dataset de teste ou validação do modelo e resultados. Objetivo, fazer grafico de GINI
-e outras análises individualizadas.
-- incluir passos e datasets
+\end{comment}

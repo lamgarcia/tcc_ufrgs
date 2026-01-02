@@ -242,9 +242,22 @@ def run_experiment(config_path):
         X_train, X_test = X_train.align(X_test, join="left", axis=1, fill_value=0)
         X_train, X_val = X_train.align(X_val, join="left", axis=1, fill_value=0)      
 
-    df_train = pd.concat([X_train.reset_index(drop=True),  y_train.reset_index(drop=True), A_train.reset_index(drop=True)], axis=1)
+
+    # DEBUT, POS PROCESSAMENTO
+    #df_train = pd.concat([X_train.reset_index(drop=True),  y_train.reset_index(drop=True), A_train.reset_index(drop=True)], axis=1)
     df_train = pd.concat([X_train,  y_train, A_train], axis=1)
-    df_train.to_csv('dftrain_depois_preprocessamento_dataset.csv', index=False)
+
+    #df_teste = pd.concat([X_test.reset_index(drop=True),  y_test.reset_index(drop=True), A_test.reset_index(drop=True)], axis=1)
+    df_teste = pd.concat([X_test,  y_test, A_test], axis=1)
+
+    #df_val   = pd.concat([X_val.reset_index(drop=True),  y_test.reset_index(drop=True), A_val.reset_index(drop=True)], axis=1)
+    df_val   = pd.concat([X_val,  y_val, A_val], axis=1)
+
+    df_pos_processamento = pd.concat([df_train, df_teste, df_val], axis=0, ignore_index=True)
+    df_pos_processamento.to_csv('df_pos_processamento.csv', index=False)
+    #df_train.to_csv('df_train.csv', index=False)
+    #df_teste.to_csv('df_train.csv', index=False)
+    #df_val.to_csv('df_train.csv', index=False)
    
     # === Pre-processing mitigation ===
 

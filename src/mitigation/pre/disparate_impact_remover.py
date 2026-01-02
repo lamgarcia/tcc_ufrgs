@@ -24,6 +24,15 @@ def apply(X_train, y_train, A_train, params):
 
     features = pd.DataFrame(dataset.features, columns=orig_cols_X + ['protected_bin']) # retorna com o protected, tem que retirar para manter padrão
     X_train  = features.drop(features.columns[-1], axis=1)  # todas menos a última
+        
+    #features = pd.DataFrame(dataset.features, columns=dataset.feature_names)
+    #X_train = features.drop(columns=['protected_bin'])
+
+    #print("X_train Columns")
+    #print(X_train.columns)
+    #existe = 'protected_bin' in X_train.columns
+    #print(f"A coluna está no X_train? {existe}")
+    
     y_train = pd.Series(dataset.labels.ravel(), name='label_bin')
     A_train = pd.Series(dataset.protected_attributes.ravel(), name='protected_bin')
 
