@@ -1,0 +1,35 @@
+"dataset":
+  "name": "adult"
+  "path": "datasets/adult_sklearn/adult_sklearn.csv"
+  "path_train": "datasets/adult_sklearn/adult_sklearn_train.csv"
+  "path_val": "datasets/adult_sklearn/adult_sklearn_val.csv"
+  "path_test": "datasets/adult_sklearn/adult_sklearn_test.csv"
+  "cols_exclude": ["fnlwgt"]
+  "cols_cat": ["workclass", "education", "marital-status", "occupation", "relationship",
+    "race", "native-country"]
+  "target": "income"
+  "sensitive": "sex"
+  "privileged": ["Male"]
+  "unprivileged": ["Female"]
+  "favorable": ">50K"
+  "unfavorable": "<=50K"
+"model":
+  "name": "decision_tree"
+  "params":
+    "ccp_alpha": 0.0
+    "criterion": "gini"
+    "min_impurity_decrease": 0.0
+    "min_samples_leaf": 1
+    "min_samples_split": 2
+    "min_weight_fraction_leaf": 0.0
+    "splitter": "best"
+"mitigation":
+  "pre":
+    "name": "none"
+    "params": {}
+  "in":
+    "name": "none"
+    "params": {}
+  "post":
+    "name": "reject_option_classification"
+    "params": {}

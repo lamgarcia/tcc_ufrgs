@@ -1,0 +1,37 @@
+"dataset":
+  "name": "adult"
+  "path": "datasets/adult_sklearn/adult_sklearn.csv"
+  "path_train": "datasets/adult_sklearn/adult_sklearn_train.csv"
+  "path_val": "datasets/adult_sklearn/adult_sklearn_val.csv"
+  "path_test": "datasets/adult_sklearn/adult_sklearn_test.csv"
+  "cols_exclude": ["fnlwgt"]
+  "cols_cat": ["workclass", "education", "marital-status", "occupation", "relationship",
+    "race", "native-country"]
+  "target": "income"
+  "sensitive": "sex"
+  "privileged": ["Male"]
+  "unprivileged": ["Female"]
+  "favorable": ">50K"
+  "unfavorable": "<=50K"
+"model":
+  "name": "svm"
+  "params":
+    "C": 1.0
+    "dual": "auto"
+    "fit_intercept": true
+    "intercept_scaling": 1
+    "loss": "squared_hinge"
+    "max_iter": 1000
+    "multi_class": "ovr"
+    "penalty": "l2"
+    "tol": 0.0001
+"mitigation":
+  "pre":
+    "name": "none"
+    "params": {}
+  "in":
+    "name": "none"
+    "params": {}
+  "post":
+    "name": "equalized_odds_postprocessing"
+    "params": {}

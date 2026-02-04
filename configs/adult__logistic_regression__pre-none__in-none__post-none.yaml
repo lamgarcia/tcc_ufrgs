@@ -1,0 +1,37 @@
+"dataset":
+  "name": "adult"
+  "path": "datasets/adult_sklearn/adult_sklearn.csv"
+  "path_train": "datasets/adult_sklearn/adult_sklearn_train.csv"
+  "path_val": "datasets/adult_sklearn/adult_sklearn_val.csv"
+  "path_test": "datasets/adult_sklearn/adult_sklearn_test.csv"
+  "cols_exclude": ["fnlwgt"]
+  "cols_cat": ["workclass", "education", "marital-status", "occupation", "relationship",
+    "race", "native-country"]
+  "target": "income"
+  "sensitive": "sex"
+  "privileged": ["Male"]
+  "unprivileged": ["Female"]
+  "favorable": ">50K"
+  "unfavorable": "<=50K"
+"model":
+  "name": "logistic_regression"
+  "params":
+    "max_iter": 2000
+    "C": 1.0
+    "dual": false
+    "fit_intercept": true
+    "intercept_scaling": 1
+    "multi_class": "deprecated"
+    "penalty": "l2"
+    "solver": "lbfgs"
+    "tol": 0.0001
+"mitigation":
+  "pre":
+    "name": "none"
+    "params": {}
+  "in":
+    "name": "none"
+    "params": {}
+  "post":
+    "name": "none"
+    "params": {}

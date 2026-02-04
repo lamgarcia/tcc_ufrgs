@@ -1,0 +1,34 @@
+"dataset":
+  "name": "adult"
+  "path": "datasets/adult_sklearn/adult_sklearn.csv"
+  "path_train": "datasets/adult_sklearn/adult_sklearn_train.csv"
+  "path_val": "datasets/adult_sklearn/adult_sklearn_val.csv"
+  "path_test": "datasets/adult_sklearn/adult_sklearn_test.csv"
+  "cols_exclude": ["fnlwgt"]
+  "cols_cat": ["workclass", "education", "marital-status", "occupation", "relationship",
+    "race", "native-country"]
+  "target": "income"
+  "sensitive": "sex"
+  "privileged": ["Male"]
+  "unprivileged": ["Female"]
+  "favorable": ">50K"
+  "unfavorable": "<=50K"
+"model":
+  "name": "xgboost"
+  "params":
+    "objective": "binary:logistic"
+    "n_estimators": 200
+    "max_depth": 6
+    "learning_rate": 0.1
+    "subsample": 0.8
+    "colsample_bytree": 0.8
+"mitigation":
+  "pre":
+    "name": "none"
+    "params": {}
+  "in":
+    "name": "none"
+    "params": {}
+  "post":
+    "name": "reject_option_classification"
+    "params": {}
