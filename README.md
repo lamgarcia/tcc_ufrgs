@@ -14,9 +14,7 @@ Orientador: Joel Luís Carbonera
 ├── gera\_configs.py           # cria vários arquivos de parâmetros em \configs a partir da leitura de params.yaml
 ├── run\_all.py                # executa os experimentos configurados nos .yaml em \configs
 ├── lote_run_all.bat           # executa vários run_all.py
- 
 ├── configs                    # pasta com arquivos de parâmetros de cada experimento (.yaml)
- 
 ├── datasets
 │   ├── adult_sklearn          # pasta com dataset principal, Adult Income do ScitLearn.
 │   │   └── adult_sklearn.csv         # dataset principal sem split
@@ -25,14 +23,12 @@ Orientador: Joel Luís Carbonera
 │   │   └── adult_sklearn_val.csv     # dataset split validação
 │   ├── adult_uci         # datasets Adult Income da fonte UCI (não foi utilizado nas análises)
 │   ├── german_sklearn    # datasets com German Score do Scikit Learn (não foi utilizado nas análises)
-
-
 ├── src
-    ├── datasets                      # código de download dos datasets
+    ├── datasets                        # código de download dos datasets
     │   ├── download_adult_sklearn.py   # download e split do Adult Income do Scikit-learn
     │   └── download_adult_uci.py       # download do Adult Income do UCI
     │   └── download_german_sklearn.py  # download do German Score
-	├── models
+	├── models                          # modelos utilziados
     │   └── bernoulli_nb.py
 	│   └── decision_tree.py
 	│   └── logistic_regression.py
@@ -41,31 +37,18 @@ Orientador: Joel Luís Carbonera
 	│   └── svm.py
 	│   └── xgboost.py
 	├── mitigation
-        ├── pre
+        ├── pre                                # mitigadores pré-processamento
 			└── disparate_impact_remover.py
 			└── reweighing.py
-        ├── in
-        ├── post	
+        ├── in                                 # mitigadores in-processing
+        ├── post	                           # mitigadores pós-processamento
 			└── equalized_odds_postprocessing.py
 			└── reject_option_classification.py
-
 	├── metrics
     │   └── evaluate_fairness.py        # calcula métricas de fairness dos experimentos
     │   └── evaluate_performance.py     # calcula métricas de desempenho preditivo dos experimientos
-
-    └── results
-        └── retraining_trigger.py       # verifica \reports e aciona retreinamento
-
-├── reports                     # pasta com reports de drift do evidently
-│   ├── report_classdrift.html
-│   ├── report_classdrift.json  # class drifts em json para a trigger
-│   ├── report_datadrift.html
-│   └── report_datadrift.json   # data drifts em json para a trigger
-
-├── runs   
-│   └── runs.log                # logs dos pythons executados no pipeline (\src)
+    └── results                         # codigo para gerar gráficos que devem ser ajustado os box manualmente
         
-├── mlruns/                    # runs do mlflow, criado após inicialização
 ```
 
 ## Executar apenas um experimento
