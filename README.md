@@ -48,7 +48,9 @@ Orientador: Joel Luís Carbonera
     │   └── evaluate_fairness.py        # calcula métricas de fairness dos experimentos
     │   └── evaluate_performance.py     # calcula métricas de desempenho preditivo dos experimientos
     └── results                         # codigo para gerar gráficos que devem ser ajustado os box manualmente
-        
+├── TCC_experimentos                    # Saídas (runs) dos experimentos utilizados no TCC
+├── TCC_imagens                         # Imagens utilizadas em Latex
+├── TCC_notebooks                       # Noteboks Jupyter (Google Colab) para criação dos gráficos do TCC
 ```
 
 ## Executar apenas um experimento
