@@ -65,20 +65,21 @@ A execução será salva em runs_adult.csv.
 
 ### Gerar os arquivos individuais de experimentos a partir dos params.yaml
 ```bash
-python gera\_configs.py
+python gera_configs.py
 ```
 Os arquivos de parâmetros .yaml de cada experimento serão salvos em \configs.
 
 ### Executar todos os epxerimentos criados em \\configs\\
 
 ```bash
-pyhton run\_all.py
+pyhton run_all.py
 ```
 As execuções serão salvas em runs_adult.csv.
 
 ## Rodar lotes de execução de vários experimentos
-
+```bash
 lote\_run\_all.bat
+```
 As execuções serão salvas em runs_adult.csv.
 
 
