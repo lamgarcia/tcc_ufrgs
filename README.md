@@ -5,7 +5,7 @@ Este espaço estão os códigos, notebooks e demais artefatos utilizados no Trab
 Aluno: Luiz Antônio Marques Garcia
 Orientador: Joel Luís Carbonera
 
-## Estrutura do Projeto
+## 📁 Estrutura do Projeto
 
 ```bash
 ├── README.md                  # documentação do projeto
@@ -40,7 +40,15 @@ Orientador: Joel Luís Carbonera
 	│   └── random_forest.py
 	│   └── svm.py
 	│   └── xgboost.py
-	
+	├── mitigation
+        ├── pre
+			└── disparate_impact_remover.py
+			└── reweighing.py
+        ├── in
+        ├── post	
+			└── equalized_odds_postprocessing.py
+			└── reject_option_classification.py
+
 	├── metrics
     │   └── evaluate_fairness.py        # calcula métricas de fairness dos experimentos
     │   └── evaluate_performance.py     # calcula métricas de desempenho preditivo dos experimientos
