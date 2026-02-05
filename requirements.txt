@@ -1,0 +1,8 @@
+aif360==0.6.1
+fairlearn==0.12.0
+matplotlib==3.10.8
+numpy==2.4.2
+pandas==3.0.0
+PyYAML==6.0.2
+PyYAML==6.0.3
+scikit_learn==1.8.0
