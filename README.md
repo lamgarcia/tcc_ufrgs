@@ -10,29 +10,42 @@ Orientador: Joel Luís Carbonera
 ```bash
 ├── README.md                  # documentação do projeto
 ├── run_exp.py                 # executa um experimento 
-├── config_pipeline.json       # configurações principais do pipeline
-├── run_training_serving.py    # run mlflow e codigo de treinamento e serving 
-├── run_simulation_drift.py    # run simula inferencia, monitor de drift e trigger
-├── stop_mlflow.py             # codigo auxiliar para parar mlflow se preciso
-├── mlflow.db                  # base dados do mlflow criada na execução do mlflow
-
-├── data                       
-│   ├── raw                    # dataset principal do modelo
-│   │   └── credit_data.csv
-│   └── inferences             # dataset com inferências simuladas
-│       └── credit_data_inferences_log.csv
+├── params.yaml                # parâmetros para geração arquivos individuais de experimentos
+├── gera\_configs.py           # cria vários arquivos de parâmetros em \configs a partir da leitura de params.yaml
+├── run\_all.py                # executa os experimentos configurados nos .yaml em \configs
+├── lote_run_all.bat           # executa vários run_all.py
  
+├── configs                    # pasta com arquivos de parâmetros de cada experimento (.yaml)
+ 
+├── datasets
+│   ├── adult_sklearn          # pasta com dataset principal, Adult Income do ScitLearn.
+│   │   └── adult_sklearn.csv         # dataset principal sem split
+│   │   └── adult_sklearn_test.csv    # dataset split teste  
+│   │   └── adult_sklearn_train.csv   # dataset split treintamento
+│   │   └── adult_sklearn_val.csv     # dataset split validação
+│   ├── adult_uci         # datasets Adult Income da fonte UCI (não foi utilizado nas análises)
+│   ├── german_sklearn    # datasets com German Score do Scikit Learn (não foi utilizado nas análises)
+
+
 ├── src
-    ├── experiments
-    │   ├── credit_model_experiments.py # experimentos de treinamento dos models
-    │   └── credit_model_promote.py     # promove modelo campeão a produção
-	├── serve
-    │   └── credit_model_serve.py       # sobe serviço de api com modelo campeão 
-	├── monitor
-    │   └── monitor_drift.py            # monitora drifts e salva em \reports
-    ├── simulation
-    │   └── simulation.py               # cria dataset de inferencias simuladas
-    └── triggers
+    ├── datasets                      # código de download dos datasets
+    │   ├── download_adult_sklearn.py   # download e split do Adult Income do Scikit-learn
+    │   └── download_adult_uci.py       # download do Adult Income do UCI
+    │   └── download_german_sklearn.py  # download do German Score
+	├── models
+    │   └── bernoulli_nb.py
+	│   └── decision_tree.py
+	│   └── logistic_regression.py
+	│   └── neural_network.py
+	│   └── random_forest.py
+	│   └── svm.py
+	│   └── xgboost.py
+	
+	├── metrics
+    │   └── evaluate_fairness.py        # calcula métricas de fairness dos experimentos
+    │   └── evaluate_performance.py     # calcula métricas de desempenho preditivo dos experimientos
+
+    └── results
         └── retraining_trigger.py       # verifica \reports e aciona retreinamento
 
 ├── reports                     # pasta com reports de drift do evidently
@@ -48,33 +61,33 @@ Orientador: Joel Luís Carbonera
 ```
 
 ## Executar apenas um experimento
+```bash
+python run_exp.py .\\configs\\adult__bernoulli_nb__pre-none__in-none__post-none.yaml
+```
+Se não passar o arquivo .yaml com os parâmetros, irá buscar os parâmetros de config.yaml.
+A execução será salva em runs_adult.csv.
 
-python run\_exp.py .\\configs\\adult\_\_bernoulli\_nb\_\_pre-none\_\_in-none\_\_post-none.yaml
 
+## Executar vários experimentos
 
-## \###Parametros dos experimentos gerais
+### Gerar os arquivos individuais de experimentos a partir dos params.yaml
+```bash
+python gera\_configs.py
+```
+Os arquivos de parâmetros .yaml de cada experimento serão salvos em \configs.
 
-params.yaml
+### Executar todos os epxerimentos criados em \\configs\\
 
-## 
-
-## \### Gerar os arquivos individuais de experimentos a partir dos param.yaml
-
-python gera\_configs.py # serão salvos em \\configs\\
-
-## 
-
-## \###Rodas todos os epxerimentos em \\configs\\
-
+```bash
 pyhton run\_all.py
+```
+As execuções serão salvas em runs_adult.csv.
 
-
-
-## \###rodar várias execuções de run\_all
+## Rodar lotes de execução de vários experimentos
 
 lote\_run\_all.bat
+As execuções serão salvas em runs_adult.csv.
 
-# 
 
 
 
