@@ -12,8 +12,8 @@ Orientador: Joel Luís Carbonera
 ├── requirements.txt           # bibliotecas utilizadas no projeto
 ├── run_exp.py                 # executa um experimento 
 ├── params.yaml                # parâmetros para geração arquivos individuais de experimentos
-├── gera\_configs.py           # cria vários arquivos de parâmetros em \configs a partir da leitura de params.yaml
-├── run\_all.py                # executa os experimentos configurados nos .yaml em \configs
+├── gera_configs.py            # cria vários arquivos de parâmetros em \configs a partir da leitura de params.yaml
+├── run_all.py                 # executa os experimentos configurados nos .yaml em \configs
 ├── lote_run_all.bat           # executa vários run_all.py
 ├── configs                    # pasta com arquivos de parâmetros de cada experimento (.yaml)
 ├── datasets
@@ -93,15 +93,20 @@ Orientador: Joel Luís Carbonera
   "pre":                                      # mitigação pré utilizada, mesmo nome do .py em \src\mitigation\pre
     "name": "reweighing"
     "params": {}
-  "in":                                 	  # mitigação in utilizada, mesmo nome do arquivo em \src\mitigation\pre  
-    "name": "none"
+  "in":                                 	  # mitigação in utilizada, mesmo nome do arquivo em \src\mitigation\in  
+    "name": "none"                            # none indica que não se quer utilizar mitigação naquela fase.
     "params": {}
   "post":
-    "name": "equalized_odds_postprocessing"   # mitigação pós utilizada, mesmo nome do arquivo em \src\mitigation\pre
+    "name": "equalized_odds_postprocessing"   # mitigação pós utilizada, mesmo nome do arquivo em \src\mitigation\post
     "params": {}
 ```
 
+## Arquivo de parâmetro para geração de vários arquivos de configuração de experimento
 
+O arquivo params.yaml tem formato similar a um arquivo de configuração de um experimento. Porém, ele aceita a inclusão de mais de modelos e mais mitigadores por fase.
+Desta forma, ao executar gera_config.py ele realiza a  combinação entre e modelos e mitigadores gerando arquivos individuais de experimentos . Os arquivos resultantes da combinação de modelos e mitigadores ficam armazenados em \configs.
+
+ 
 ## Executar experimentos
 
 ### Executar apenas um experimento
