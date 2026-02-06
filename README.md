@@ -61,7 +61,7 @@ Orientador: Joel Luís Carbonera
 
 ## Arquivo de parâmetro do experimento
 
- Para execução de um experimento run_exp.py  é preciso passar um arquivo de configuração no formato .yaml no formato abaixo.
+ Para execução de um experimento _run_exp.py_ é preciso passar um arquivo de configuração no formato _.yaml_ no formato abaixo.
  Nele estão as informações utilizadas no experimento sobre.
 
 ```yaml
@@ -104,9 +104,9 @@ Orientador: Joel Luís Carbonera
 ## Geração de vários arquivos de configuração de experimentos
 
 O arquivo params.yaml tem formato similar a um arquivo de configuração de um experimento. Porém, ele aceita a inclusão de mais de modelos e mais mitigadores por fase.
-Desta forma, o codigo gera_config.py lê params.yaml e  realiza a combinação dos modelos e mitigadores gerando arquivos individuais de experimentos.
-Os arquivos resultantes da combinação de modelos e mitigadores ficam armazenados em \configs.
-Ao executar run_all.py serão feitas execuções de run_exp.py para cada um dos arquivos de experimentos armazenados em \configs.
+Desta forma, o codigo _gera_config.py_ lê _params.yaml_ e realiza a combinação dos modelos e mitigadores gerando arquivos individuais de experimentos.
+Os arquivos resultantes da combinação de modelos e mitigadores ficam armazenados em _\configs_.
+Ao executar _run_all.py_ serão feitas execuções de run_exp.py para cada um dos arquivos de experimentos armazenados em _\configs_.
 
  
 ## Executar experimentos
@@ -115,8 +115,8 @@ Ao executar run_all.py serão feitas execuções de run_exp.py para cada um dos 
 ```bash
 python run_exp.py .\\configs\\adult__bernoulli_nb__pre-none__in-none__post-none.yaml
 ```
-Se não passar o arquivo .yaml com os parâmetros, irá buscar os parâmetros de config.yaml.
-A execução será salva em runs_adult.csv.
+Se não passar o arquivo _.yaml_ com os parâmetros, irá buscar os parâmetros de _config.yaml_.
+A execução será salva em _runs_adult.csv_.
 
 
 ### Executar vários experimentos
@@ -125,23 +125,22 @@ A execução será salva em runs_adult.csv.
 ```bash
 python gera_configs.py
 ```
-Os arquivos de parâmetros .yaml de cada experimento serão salvos em \configs.
+Os arquivos de parâmetros _.yaml_ de cada experimento serão salvos em _\configs_.
 
 #### Executar todos os epxerimentos criados em \\configs\\
 
 ```bash
 pyhton run_all.py
 ```
-As execuções serão salvas em runs_adult.csv.
+As execuções serão salvas em _runs_adult.csv_.
 
 #### Rodar lotes de execução de vários experimentos
 ```bash
-lote\_run\_all.bat
+lote_run_all.bat
 ```
-As execuções serão salvas em runs_adult.csv.
+As execuções serão salvas em _runs_adult.cs_v.
 
 
-## \###No warnings
-
+#### No warnings
 set TF\_ENABLE\_ONEDNN\_OPTS=0
 
