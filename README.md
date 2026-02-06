@@ -9,6 +9,7 @@ Orientador: Joel Luís Carbonera
 
 ```bash
 ├── README.md                  # documentação do projeto
+├── requirements.txt           # bibliotecas utilizadas no projeto
 ├── run_exp.py                 # executa um experimento 
 ├── params.yaml                # parâmetros para geração arquivos individuais de experimentos
 ├── gera\_configs.py           # cria vários arquivos de parâmetros em \configs a partir da leitura de params.yaml
@@ -45,15 +46,65 @@ Orientador: Joel Luís Carbonera
 			└── equalized_odds_postprocessing.py
 			└── reject_option_classification.py
 	├── metrics
-    │   └── evaluate_fairness.py        # calcula métricas de fairness dos experimentos
-    │   └── evaluate_performance.py     # calcula métricas de desempenho preditivo dos experimientos
-    └── results                         # codigo para gerar gráficos que devem ser ajustado os box manualmente
-├── TCC_experimentos                    # Saídas (runs) dos experimentos utilizados no TCC
+    │   └── evaluate_fairness.py        # métricas de fairness dos experimentos
+    │   └── evaluate_performance.py     # métricas de desempenho preditivo dos experimientos
+    └── results                         # pasta com codigos auxiliares
+ 	│   └── evaluate_fairness.py
+ 	│   └── results_mean_std.py         # retorna CSV agregado por médio e devio padrão
+├── TCC_experimentos                    # pasta com saídas (runs) dos experimentos utilizados no TCC
+	├── dfs_10x                         # log dos datasets entra e saída dos mitigadores para conferências
+	└── runs_adult_10x_1.csv            # Saída do lote de 10 execuções dos experimentos com parâmetros em \configs
+	└── runs_adult_10x_1_mean_std.csv   # O runs_adult_10x_1.csv agregado por média e desvio padrão (resultado de (results_mean_std.py))
 ├── TCC_imagens                         # Imagens utilizadas em Latex
 ├── TCC_notebooks                       # Noteboks Jupyter (Google Colab) para criação dos gráficos do TCC
 ```
 
-## Executar apenas um experimento
+## Arquivo de parâmetro do experimento
+
+ Para execução de um experimento run_exp.py  é preciso passar um arquivo de configuração no formato .yaml no formato abaixo.
+ Nele estão as informações utilizadas no experimento sobre.
+
+```yaml
+"dataset":
+  "name": "adult"                                                                           # nome do dataset
+  "path": "datasets/adult_sklearn/adult_sklearn.csv"                                        # dataset completo
+  "path_train": "datasets/adult_sklearn/adult_sklearn_train.csv"                            # dataset com split de treino
+  "path_val": "datasets/adult_sklearn/adult_sklearn_val.csv"                                # dataset com split de validação
+  "path_test": "datasets/adult_sklearn/adult_sklearn_test.csv"                              # dataset  com split  de teste   
+  "cols_exclude": ["fnlwgt"]                                                                # colunas que se deseja excluir
+  "cols_cat": ["workclass", "education", "marital-status", "occupation", "relationship",    
+    "race", "native-country"]     # colunas categóricas para one-hot enconding
+  "target": "income"       		  # atributo alvo                                        
+  "sensitive": "sex"              # atributo sensível
+  "privileged": ["Male"]          # valor do atributo sensível que indica o grupo privilegiado
+  "unprivileged": ["Female"]      # valor do atributo sensível que indica o grupo desprivilegiado
+  "favorable": ">50K"             # valor do atributo alvo que é favorável 
+  "unfavorable": "<=50K"          # valor do atributo alvo que não é favorável
+"model":
+  "name": "xgboost"                 # modelo utilizado, utilize o mesmo nome do arquivo .ý em \src\models    .
+  "params":                         # hiperâmetros do modelo 
+    "objective": "binary:logistic"
+    "n_estimators": 200
+    "max_depth": 6
+    "learning_rate": 0.1
+    "subsample": 0.8
+    "colsample_bytree": 0.8
+"mitigation":
+  "pre":                                      # mitigação pré utilizada, mesmo nome do .py em \src\mitigation\pre
+    "name": "reweighing"
+    "params": {}
+  "in":                                 	  # mitigação in utilizada, mesmo nome do arquivo em \src\mitigation\pre  
+    "name": "none"
+    "params": {}
+  "post":
+    "name": "equalized_odds_postprocessing"   # mitigação pós utilizada, mesmo nome do arquivo em \src\mitigation\pre
+    "params": {}
+```
+
+
+## Executar experimentos
+
+### Executar apenas um experimento
 ```bash
 python run_exp.py .\\configs\\adult__bernoulli_nb__pre-none__in-none__post-none.yaml
 ```
@@ -61,22 +112,22 @@ Se não passar o arquivo .yaml com os parâmetros, irá buscar os parâmetros de
 A execução será salva em runs_adult.csv.
 
 
-## Executar vários experimentos
+### Executar vários experimentos
 
-### Gerar os arquivos individuais de experimentos a partir dos params.yaml
+#### Gerar os arquivos individuais de experimentos a partir dos params.yaml
 ```bash
 python gera_configs.py
 ```
 Os arquivos de parâmetros .yaml de cada experimento serão salvos em \configs.
 
-### Executar todos os epxerimentos criados em \\configs\\
+#### Executar todos os epxerimentos criados em \\configs\\
 
 ```bash
 pyhton run_all.py
 ```
 As execuções serão salvas em runs_adult.csv.
 
-## Rodar lotes de execução de vários experimentos
+#### Rodar lotes de execução de vários experimentos
 ```bash
 lote\_run\_all.bat
 ```
