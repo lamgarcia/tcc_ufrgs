@@ -101,10 +101,12 @@ Orientador: Joel Luís Carbonera
     "params": {}
 ```
 
-## Arquivo de parâmetro para geração de vários arquivos de configuração de experimento
+## Geração de vários arquivos de configuração de experimentos
 
 O arquivo params.yaml tem formato similar a um arquivo de configuração de um experimento. Porém, ele aceita a inclusão de mais de modelos e mais mitigadores por fase.
-Desta forma, ao executar gera_config.py ele realiza a  combinação entre e modelos e mitigadores gerando arquivos individuais de experimentos . Os arquivos resultantes da combinação de modelos e mitigadores ficam armazenados em \configs.
+Desta forma, o codigo gera_config.py lê params.yaml e  realiza a combinação dos modelos e mitigadores gerando arquivos individuais de experimentos.
+Os arquivos resultantes da combinação de modelos e mitigadores ficam armazenados em \configs.
+Ao executar run_all.py serão feitas execuções de run_exp.py para cada um dos arquivos de experimentos armazenados em \configs.
 
  
 ## Executar experimentos
@@ -137,10 +139,6 @@ As execuções serão salvas em runs_adult.csv.
 lote\_run\_all.bat
 ```
 As execuções serão salvas em runs_adult.csv.
-
-
-
-
 
 
 ## \###No warnings
