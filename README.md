@@ -1,9 +1,18 @@
 # Trabalho de Conclusão do Curso  - UFRGS 
 
-Este espaço estão os códigos, notebooks e demais artefatos utilizados no Trabalho de Conclusão para o curso de Especialização em Engenheria de Software para Aplicações de Ciência de Dados, UFRGS, 2024-2026.
+This repository contains the source code, notebooks, and other artifacts used in the Final Project for the Specialization Program in Software Engineering for Data Science Applications at UFRGS, 2024–2026.
 
-Aluno: Luiz Antônio Marques Garcia
-Orientador: Joel Luís Carbonera
+Student: Luiz Antônio Marques Garcia
+Supervisor: Joel Luís Carbonera
+
+Abstract: This work conducted an empirical investigation into the impact of discriminatory bias mitigation on group fairness for binary groups
+(women/men) and on the performance of binary classification prediction models. Seven supervised models (Logistic Regression, Neural Networks, SVM,
+Decision Tree, Random Forest, XGBoost, and Bernoulli Naive Bayes) were trained on the public UCI Adult Income dataset, without fairness awareness, to serve as baselines.
+A pipeline was developed that enabled the simultaneous application of bias mitigation methods at the pre-processing and post-processing stages, allowing experiments to assess
+their effectiveness in improving fairness for social groups. The mitigation methods used were Disparate Impact Remover, Reweighing (REW), Equalized Odds Post-Processing,
+and Reject Option Classification (REJOC). For the analysis of the trade-off between fairness and model performance, fairness metrics such as Disparate Impact, Equalized Odds
+Ratio, and Average Predictive Value Difference were employed, along with performance metrics such as precision, recall, and F1-score.
+
 
 ## 📁 Estrutura do Projeto
 
