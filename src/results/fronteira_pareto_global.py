@@ -3,7 +3,9 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 
-df = pd.read_csv("runs_adult_10x_1_mean_std.csv")
+path = r"..\..\TCC_experimentos\runs_adult_10x_1_mean_std.csv"
+
+df = pd.read_csv(path)
 
 nonestring = 'X'
 method_map = {
@@ -162,6 +164,7 @@ def get_mitig_name(row):
         return f"{pre_name}+{post_name}"
     else:
         return "Baseline"
+
 def plot_front_paretto_global (metric_x, metric_y):
 	# ============================================================
 	# 1. Função de fronteira de Pareto
@@ -241,21 +244,21 @@ def plot_front_paretto_global (metric_x, metric_y):
 			textcoords="offset points",
 			xytext=(10, -10),
 			ha='left',
-			fontsize=8,
+			fontsize=14,
 			bbox=dict(facecolor="white", edgecolor="black", boxstyle="round,pad=0.3")
 		)
 
 		ann.draggable()
 
-  
+
 	# Configurações
-	plt.xlabel(metric_map[metric_x])
-	plt.ylabel(metric_map[metric_y])
+	plt.xlabel(metric_map[metric_x], fontsize=14)
+	plt.ylabel(metric_map[metric_y], fontsize=14)
 	#plt.title("Fronteira de Pareto (Global)\n")
 	plt.xlim(0, 1.05)
-	
+
 	plt.grid(True, linestyle="--", alpha=0.4)
-	plt.legend()
+	plt.legend(fontsize=13)
 	plt.tight_layout()
 	plt.show()
 
@@ -263,3 +266,4 @@ def plot_front_paretto_global (metric_x, metric_y):
 
 plot_front_paretto_global("demographic_parity_ratio","f1-score")
 plot_front_paretto_global("equal_odds_ratio","f1-score")
+
